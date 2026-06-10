@@ -33,8 +33,9 @@ TARGET_MAIN    = $(OBJ_DIR)/main.out
 TARGET_TEST    = $(OBJ_DIR)/test.out
 TARGET_SPACERS = $(OBJ_DIR)/spacers
 
-SRC_LIB        = src/main.c
-SRC_TEST_MAIN  = test/test.c
+# DO BETTER LOL
+SRC_LIB        = src/main.c src/buffers.c src/utils.c
+SRC_TEST_MAIN  = test/test.c src/buffers.c src/utils.c
 
 SRC_MR_UTILS   = src/mr_utils/src/mrd_debug.c \
                  src/mr_utils/src/mrl_logger.c \
@@ -107,4 +108,3 @@ record:
 
 -include $(ALL_TEST_OBJS:.o=.d)
 -include $(OBJ_SPACERS:.o=.d)
-
