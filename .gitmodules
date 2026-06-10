@@ -1,0 +1,3 @@
+[submodule "src/mr_utils"]
+	path = src/mr_utils
+	url = git@github.com:DrCheeseFace/mr_utils.git

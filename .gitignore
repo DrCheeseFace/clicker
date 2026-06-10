@@ -1,0 +1,9 @@
+*.out
+.cache
+compile_commands.json
+build
+
+# perf generated stuff
+*.perf
+*.data
+*.old
