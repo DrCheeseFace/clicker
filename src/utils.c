@@ -41,6 +41,7 @@ process_arg(char *arg)
 	for (int i = 0; i < OPTION_FLAGS_COUNT; i++) {
 		if (strcmp(arg, option_to_str[i]) == 0) {
 			option = i;
+			break;
 		}
 	}
 
