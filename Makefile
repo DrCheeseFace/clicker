@@ -21,7 +21,7 @@ ifneq (,$(filter debug build-debug,$(MAKECMDGOALS)))
 endif
 
 ifeq ($(BUILD_TYPE),debug)
-    CFLAGS     := -O0 -g -fno-omit-frame-pointer -rdynamic -DDEBUG -DMRD_DEBUG_ONLY_CALLED_AND_ERR $(WARNINGS) $(INCLUDES)
+    CFLAGS     := -O0 -g -fno-omit-frame-pointer -rdynamic -DDEBUG -DMRD_DEBUG_DEFAULT $(WARNINGS) $(INCLUDES)
 else
     CFLAGS     := -O2 $(WARNINGS) $(INCLUDES)
 endif
@@ -77,10 +77,10 @@ test: $(TARGET_TEST)
 run: $(TARGET_MAIN)
 	./$(TARGET_MAIN)
 
-build-debug: $(TARGET_TEST) $(TARGET_SPACERS)
+build-debug: $(TARGET_MAIN) $(TARGET_SPACERS)
 
 debug: build-debug
-	./$(TARGET_TEST)
+	./$(TARGET_MAIN)
 
 clean:
 	rm -rf $(BUILD_DIR)
