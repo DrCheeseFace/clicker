@@ -10,7 +10,7 @@ void
 log_help(void)
 
 {
-	printf("mouse focused TUI text editor\n"
+	printf("mouse focused text editor\n"
 	       "Usage: %s [OPTION] FILE\n"
 	       "Options:\n"
 	       "  -h, --help         Print help\n"
