@@ -6,35 +6,41 @@
 #include <stdlib.h>
 #include <string.h>
 
-internal void init_mouse_event(XEvent GeneralEvent,
+internal void init_mouse_event(XEvent *GeneralEvent,
 			       struct clk_WindowEvent *event);
 
-global_variable GC context;
-global_variable Window root_window;
-global_variable Display *main_display;
-global_variable Atom wm_delete_window;
+struct x11_Window {
+	GC context;
+	Window root_window;
+	Window main_window;
+	Display *main_display;
+	Atom wm_delete_window;
+};
 
-void
-window_init(void)
+internal void
+window_init(struct x11_Window *window)
 {
-	main_display = XOpenDisplay(0);
-	root_window = XDefaultRootWindow(main_display);
-	wm_delete_window = XInternAtom(main_display, "WM_DELETE_WINDOW", False);
-	context = XDefaultGC(main_display, 0);
-	XSetForeground(main_display, context,
-		       WhitePixel(main_display, DefaultScreen(main_display)));
-}
+	window->main_display = XOpenDisplay(0);
 
-void
-window_cleanup(void)
-{
-	XCloseDisplay(main_display);
+	window->root_window = XDefaultRootWindow(window->main_display);
+
+	window->wm_delete_window =
+		XInternAtom(window->main_display, "WM_DELETE_WINDOW", False);
+
+	window->context = XDefaultGC(window->main_display, 0);
+
+	XSetForeground(window->main_display, window->context,
+		       WhitePixel(window->main_display,
+				  DefaultScreen(window->main_display)));
 }
 
 clk_Window *
 window_create(int window_x, int window_y, int window_w, int window_h,
 	      int border_w)
 {
+	struct x11_Window *clicker_window = malloc(sizeof(*clicker_window));
+	window_init(clicker_window);
+
 	int AttributeValueMask = CWBackPixel | CWEventMask;
 	XSetWindowAttributes WindowAttributes = { 0 };
 
@@ -45,42 +51,50 @@ window_create(int window_x, int window_y, int window_w, int window_h,
 
 	WindowAttributes.background_pixel = WINDOW_BACKGROUND_COLOR;
 
-	Window main_window =
-		XCreateWindow(main_display, root_window, window_x, window_y,
+	clicker_window->main_window =
+		XCreateWindow(clicker_window->main_display,
+			      clicker_window->root_window, window_x, window_y,
 			      window_w, window_h, border_w, CopyFromParent,
 			      CopyFromParent, CopyFromParent,
 			      AttributeValueMask, &WindowAttributes);
 
-	XStoreName(main_display, main_window, PROGRAM_NAME);
+	XStoreName(clicker_window->main_display, clicker_window->main_window,
+		   PROGRAM_NAME);
 
-	XSetWMProtocols(main_display, main_window, &wm_delete_window, 1);
+	XSetWMProtocols(clicker_window->main_display,
+			clicker_window->main_window,
+			&clicker_window->wm_delete_window, 1);
 
-	XMapWindow(main_display, main_window);
+	XMapWindow(clicker_window->main_display, clicker_window->main_window);
 
-	clk_Window *window = malloc(sizeof(Window));
-	*(Window *)window = main_window;
-
-	return window;
+	return clicker_window;
 }
 
 int
-window_destroy(clk_Window *window)
+window_destroy(clk_Window *clicker_window)
 {
-	int err = XDestroyWindow(main_display, *(Window *)window);
-	free(window);
+	struct x11_Window *x11_window = clicker_window;
+
+	int err = XDestroyWindow(x11_window->main_display,
+				 x11_window->main_window);
+
+	XCloseDisplay(x11_window->main_display);
+	free(x11_window);
 
 	return err;
 }
 
 void
-window_get_event(clk_Window *window, struct clk_WindowEvent *event)
+window_get_event(clk_Window *clicker_window, struct clk_WindowEvent *event)
 {
+	struct x11_Window *x11_window = clicker_window;
+
 	XEvent GeneralEvent = { 0 };
-	XNextEvent(main_display, &GeneralEvent);
+	XNextEvent(x11_window->main_display, &GeneralEvent);
 
-	event->type = CLK_WINDOW_EVENT_TYPE_NONE;
+	memset(event, 0, sizeof(*event));
 
-	if (GeneralEvent.xany.window != *(Window *)window)
+	if (GeneralEvent.xany.window != x11_window->main_window)
 		return;
 
 	switch (GeneralEvent.type) {
@@ -96,21 +110,22 @@ window_get_event(clk_Window *window, struct clk_WindowEvent *event)
 
 	case ButtonPress:
 		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEDOWN;
-		init_mouse_event(GeneralEvent, event);
+		init_mouse_event(&GeneralEvent, event);
 		break;
 
 	case ButtonRelease:
 		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEUP;
-		init_mouse_event(GeneralEvent, event);
+		init_mouse_event(&GeneralEvent, event);
 		break;
 
 	case MotionNotify:
 		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEMOVE;
-		init_mouse_event(GeneralEvent, event);
+		init_mouse_event(&GeneralEvent, event);
 		break;
 
 	case ClientMessage: {
-		if ((Atom)GeneralEvent.xclient.data.l[0] == wm_delete_window) {
+		if ((Atom)GeneralEvent.xclient.data.l[0] ==
+		    x11_window->wm_delete_window) {
 			event->type = CLK_WINDOW_EVENT_TYPE_CLOSEREQ;
 		}
 		break;
@@ -125,30 +140,40 @@ window_get_event(clk_Window *window, struct clk_WindowEvent *event)
 }
 
 void
-window_clear(clk_Window *window)
+window_clear(clk_Window *clicker_window)
 {
-	XClearWindow(main_display, *(Window *)window);
+	struct x11_Window *x11_window = clicker_window;
+	XClearWindow(x11_window->main_display, x11_window->main_window);
 }
 
 void
-window_flush_display(void)
+window_flush_display(clk_Window *clicker_window)
 {
-	XFlush(main_display);
+	struct x11_Window *x11_window = clicker_window;
+	XFlush(x11_window->main_display);
 }
 
 internal void
-init_mouse_event(XEvent GeneralEvent, struct clk_WindowEvent *event)
+init_mouse_event(XEvent *GeneralEvent, struct clk_WindowEvent *event)
 {
-	event->val.mouse.x = GeneralEvent.xbutton.x_root;
-	event->val.mouse.y = GeneralEvent.xbutton.y_root;
-	event->val.mouse.button = GeneralEvent.xbutton.button > 3 ?
-					  3 :
-					  GeneralEvent.xbutton.button;
+	if (GeneralEvent->type == MotionNotify) {
+		event->val.mouse.x = GeneralEvent->xmotion.x;
+		event->val.mouse.y = GeneralEvent->xmotion.y;
+		event->val.mouse.button = 0;
+	} else {
+		event->val.mouse.x = GeneralEvent->xbutton.x;
+		event->val.mouse.y = GeneralEvent->xbutton.y;
+		event->val.mouse.button = GeneralEvent->xbutton.button > 3 ?
+						  3 :
+						  GeneralEvent->xbutton.button;
+	}
 }
 
 void
-window_draw_debug_snack(clk_Window *window, const char *text)
+window_draw_debug_snack(clk_Window *clicker_window, const char *text)
 {
+	struct x11_Window *x11_window = clicker_window;
+
 	int line_height = 20;
 	int x = 10;
 	int y = 20;
@@ -159,12 +184,12 @@ window_draw_debug_snack(clk_Window *window, const char *text)
 	while ((newline_loc = strchr(p, '\n')) != NULL) {
 		int len = newline_loc - p;
 
-		XDrawString(main_display, *(Window *)window, context, x, y, p,
-			    len);
+		XDrawString(x11_window->main_display, x11_window->main_window,
+			    x11_window->context, x, y, p, len);
 		y += line_height;
 		p = newline_loc + 1; // skip newline character
 	}
 
-	XDrawString(main_display, *(Window *)window, context, x, y, p,
-		    strlen(p));
+	XDrawString(x11_window->main_display, x11_window->main_window,
+		    x11_window->context, x, y, p, strlen(p));
 }

@@ -1,3 +1,6 @@
-# Clicker
+# clicker
 
-mouse only terminal text editor
+mouse oriented text editor
+
+# TODO
+- [ ] gap buffers for text

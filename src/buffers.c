@@ -20,12 +20,19 @@ buffer_create(FILE *file)
 	memset(buffer, 0, sizeof(*buffer));
 
 	buffer->write_to = file;
-	buffer->text = (char *)(buffer + 1);
 
 	if (file) {
 		fseek(file, 0, SEEK_END);
-		size_t length = ftell(file);
+		long length = ftell(file);
 		fseek(file, 0, SEEK_SET);
+
+		if (length < 0) {
+			length = 0;
+		}
+
+		if ((size_t)length > MAX_BUFFER_TEXT_LEN) {
+			length = MAX_BUFFER_TEXT_LEN;
+		}
 
 		fread(buffer->text, 1, length, file);
 		buffer->text_len = length;

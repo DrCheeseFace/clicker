@@ -36,9 +36,6 @@ struct clk_WindowEvent {
 	} val;
 };
 
-void window_init(void);
-void window_cleanup(void);
-
 clk_Window *window_create(int window_x, int window_y, int window_w,
 			  int window_h, int border_w);
 int window_destroy(clk_Window *window);
@@ -46,7 +43,7 @@ int window_destroy(clk_Window *window);
 void window_get_event(clk_Window *window, struct clk_WindowEvent *event);
 
 void window_clear(clk_Window *window);
-void window_flush_display(void);
+void window_flush_display(clk_Window *window);
 
 #ifdef DEBUG
 void window_draw_debug_snack(clk_Window *window, const char *text);

@@ -37,7 +37,7 @@ typedef struct {
 	size_t text_len;
 	size_t cursor_x;
 	size_t cursor_y;
-	char *text;
+	char text[];
 } Buffer;
 
 extern BufferIndex buffer_count;
