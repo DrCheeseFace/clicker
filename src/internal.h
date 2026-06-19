@@ -27,24 +27,26 @@ Err process_arg(char *arg);
 
 // NOTE: uint8_max because typedef uint8_t BufferIndex;
 #define MAX_BUFFERS UINT8_MAX
-#define BUFFER_ALLOC_SIZE 1 * 1024 * 1024 // 1mb
-#define MAX_BUFFER_TEXT_LEN (BUFFER_ALLOC_SIZE - sizeof(*buffer))
-
 typedef uint8_t BufferIndex;
 
 typedef struct {
 	FILE *write_to;
-	size_t text_len;
+	size_t gap_start;
+	size_t gap_end;
 	size_t cursor_x;
 	size_t cursor_y;
 	char text[];
 } Buffer;
+
+#define BUFFER_ALLOC_SIZE 1 * 1024 * 1024 // 1mb
+#define MAX_BUFFER_TEXT_LEN (BUFFER_ALLOC_SIZE - sizeof(Buffer))
 
 extern BufferIndex buffer_count;
 extern Buffer *buffers[MAX_BUFFERS];
 
 Buffer *buffer_create(FILE *file);
 void buffer_destroy(Buffer *buffer);
+void buffer_move_gap(Buffer *buffer, size_t gap_start);
 
 #define BUFFERS_GET_BUFFER_BY_IDX(idx) (buffers[(idx)])
 

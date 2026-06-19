@@ -37,16 +37,74 @@ MRT_TEST_GROUP(create_destroy_buffer)
 	buffer_destroy(buffer);
 	buffer_destroy(buffer1);
 
-	FILE *file = fopen("./test/testdata/testfile.txt", "r+");
-	ASSERT(file != NULL);
-
 	const char *filestr =
 		"this is a file\nnew lined here\ttab here\n\tnewline tab here\n\nnewline above here\n\n";
 
+	FILE *file = fopen("./test/testdata/testfile.txt", "w+b");
+	ASSERT(file != NULL);
+	fputs(filestr, file);
+	rewind(file);
+
 	buffer = buffer_create(file);
-	MRT_ASSERT(strncmp(buffer->text, filestr, 1) == 0,
+
+	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, filestr,
+			   strlen(filestr)) == 0,
 		   "filled buffer with file contents");
-	MRT_ASSERT(buffer->text_len == 85, "text len set to text len length");
+
+	buffer_destroy(buffer);
+	fclose(file);
+}
+
+MRT_TEST_GROUP(move_buffer_gap)
+{
+	const char *filestr = "0123456789";
+
+	FILE *file = fopen("./test/testdata/testfile1.txt", "w+b");
+	ASSERT(file != NULL);
+	fputs(filestr, file);
+	rewind(file);
+
+	Buffer *buffer = buffer_create(file);
+	memcpy(buffer->text + buffer->gap_end, filestr, strlen(filestr));
+
+	// init state
+	MRT_ASSERT(buffer->gap_start == 0, "init gap start 0");
+	MRT_ASSERT(buffer->gap_end == MAX_BUFFER_TEXT_LEN - strlen(filestr),
+		   "init gap end");
+
+	// same gap position
+	buffer_move_gap(buffer, 0);
+	MRT_ASSERT(buffer->gap_start == 0, "move gap to 0 gap start");
+	MRT_ASSERT(buffer->gap_end == MAX_BUFFER_TEXT_LEN - strlen(filestr),
+		   "move gap to 0 gap end");
+
+	// move gap right
+	buffer_move_gap(buffer, 5);
+	MRT_ASSERT(buffer->gap_start == 5, "move gap right to 5 start");
+	MRT_ASSERT(buffer->gap_end == MAX_BUFFER_TEXT_LEN - strlen(filestr) + 5,
+		   "move gap right to 5 end");
+	MRT_ASSERT(strncmp(buffer->text, "01234", 5) == 0,
+		   "text before gap strncmp");
+	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, "56789", 5) == 0,
+		   "text after gap strncmp");
+
+	// move gap left
+	buffer_move_gap(buffer, 2);
+	MRT_ASSERT(buffer->gap_start == 2, "move gap left to 2 start");
+	MRT_ASSERT(buffer->gap_end == MAX_BUFFER_TEXT_LEN - strlen(filestr) + 2,
+		   "move gap left to 2 end");
+	MRT_ASSERT(strncmp(buffer->text, "01", 2) == 0,
+		   "text before gap strncmp");
+	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, "23456789", 8) == 0,
+		   "text after gap strncmp");
+
+	// move gap to the end
+	buffer_move_gap(buffer, strlen(filestr));
+	MRT_ASSERT(buffer->gap_start == strlen(filestr),
+		   "move gap to absolute end start");
+	MRT_ASSERT(buffer->gap_end == MAX_BUFFER_TEXT_LEN,
+		   "move gap to absolute end end");
+
 	buffer_destroy(buffer);
 	fclose(file);
 }
@@ -64,6 +122,7 @@ main(void)
 
 	MRT_REGISTER_TEST_GROUP(ctx, debug_test);
 	MRT_REGISTER_TEST_GROUP(ctx, create_destroy_buffer);
+	MRT_REGISTER_TEST_GROUP(ctx, move_buffer_gap);
 
 #ifdef DEBUG
 	Err err = mrt_ctx_run(ctx, FALSE);

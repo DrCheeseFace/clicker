@@ -34,11 +34,14 @@ buffer_create(FILE *file)
 			length = MAX_BUFFER_TEXT_LEN;
 		}
 
-		fread(buffer->text, 1, length, file);
-		buffer->text_len = length;
+		buffer->gap_start = 0;
+		buffer->gap_end = MAX_BUFFER_TEXT_LEN - length;
+
+		fread(buffer->text + buffer->gap_end, 1, length, file);
 	} else {
 		memset(buffer->text, 0, MAX_BUFFER_TEXT_LEN);
-		buffer->text_len = 0;
+		buffer->gap_start = 0;
+		buffer->gap_end = MAX_BUFFER_TEXT_LEN;
 	}
 
 	buffers[buffer_count] = buffer;
@@ -60,4 +63,30 @@ buffer_destroy(Buffer *buffer)
 	}
 
 	munmap(buffer, BUFFER_ALLOC_SIZE);
+}
+
+void
+buffer_move_gap(Buffer *buffer, size_t gap_start)
+{
+	if (buffer->gap_start == gap_start)
+		return;
+
+	size_t bytes_to_move;
+
+	if (gap_start < buffer->gap_start) {
+		bytes_to_move = buffer->gap_start - gap_start;
+		memmove(buffer->text + buffer->gap_end - bytes_to_move,
+			buffer->text + buffer->gap_start - bytes_to_move,
+			bytes_to_move);
+
+		buffer->gap_end = buffer->gap_end - bytes_to_move;
+	} else {
+		bytes_to_move = gap_start - buffer->gap_start;
+		memmove(buffer->text + buffer->gap_start,
+			buffer->text + buffer->gap_end, bytes_to_move);
+		buffer->gap_end = buffer->gap_end + bytes_to_move;
+	}
+
+	buffer->gap_start = gap_start;
+	return;
 }
