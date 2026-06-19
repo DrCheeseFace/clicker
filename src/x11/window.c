@@ -6,9 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-internal void init_mouse_event(XEvent *GeneralEvent,
-			       struct clk_WindowEvent *event);
-
 struct x11_Window {
 	GC context;
 	Window root_window;
@@ -110,17 +107,23 @@ window_get_event(clk_Window *clicker_window, struct clk_WindowEvent *event)
 
 	case ButtonPress:
 		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEDOWN;
-		init_mouse_event(&GeneralEvent, event);
+		event->val.mouse.x = GeneralEvent.xbutton.x;
+		event->val.mouse.y = GeneralEvent.xbutton.y;
+		event->val.mouse.button = GeneralEvent.xbutton.button;
 		break;
 
 	case ButtonRelease:
 		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEUP;
-		init_mouse_event(&GeneralEvent, event);
+		event->val.mouse.x = GeneralEvent.xbutton.x;
+		event->val.mouse.y = GeneralEvent.xbutton.y;
+		event->val.mouse.button = GeneralEvent.xbutton.button;
 		break;
 
 	case MotionNotify:
 		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEMOVE;
-		init_mouse_event(&GeneralEvent, event);
+		event->val.mouse.x = GeneralEvent.xmotion.x;
+		event->val.mouse.y = GeneralEvent.xmotion.y;
+		event->val.mouse.button = 0;
 		break;
 
 	case ClientMessage: {
@@ -151,22 +154,6 @@ window_flush_display(clk_Window *clicker_window)
 {
 	struct x11_Window *x11_window = clicker_window;
 	XFlush(x11_window->main_display);
-}
-
-internal void
-init_mouse_event(XEvent *GeneralEvent, struct clk_WindowEvent *event)
-{
-	if (GeneralEvent->type == MotionNotify) {
-		event->val.mouse.x = GeneralEvent->xmotion.x;
-		event->val.mouse.y = GeneralEvent->xmotion.y;
-		event->val.mouse.button = 0;
-	} else {
-		event->val.mouse.x = GeneralEvent->xbutton.x;
-		event->val.mouse.y = GeneralEvent->xbutton.y;
-		event->val.mouse.button = GeneralEvent->xbutton.button > 3 ?
-						  3 :
-						  GeneralEvent->xbutton.button;
-	}
 }
 
 void

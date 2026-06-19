@@ -15,10 +15,13 @@ enum clk_WindowEventType {
 	CLK_WINDOW_EVENT_TYPE_CLOSEREQ,
 };
 
-enum clk_WindowEventButton {
-	CLK_WINDOW_EVENT_BUTTON1,
-	CLK_WINDOW_EVENT_BUTTON2,
-	CLK_WINDOW_EVENT_BUTTON3,
+enum clk_WindowEventMouse {
+	CLK_WINDOW_EVENT_MOUSE1,
+	CLK_WINDOW_EVENT_MOUSE2,
+	CLK_WINDOW_EVENT_MOUSE3,
+	CLK_WINDOW_EVENT_MOUSE_SCROLL_UP,
+	CLK_WINDOW_EVENT_MOUSE_SCROLL_DOWN,
+
 };
 
 struct clk_WindowEvent {
@@ -26,7 +29,7 @@ struct clk_WindowEvent {
 
 	union {
 		struct {
-			enum clk_WindowEventButton button;
+			enum clk_WindowEventMouse button;
 			uint16_t x;
 			uint16_t y;
 		} mouse;

@@ -1,4 +1,6 @@
-*.out
+ test/testdata/testfile.txt
+ test/testdata/testfile1.txt
+*.txt
 .cache
 compile_commands.json
 build
