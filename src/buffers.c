@@ -1,46 +1,37 @@
-#include "buffers.h"
+#include "./internal.h"
 #include <mr_utils.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 
 Buffer *buffers[MAX_BUFFERS] = { NULL };
 BufferIndex buffer_count = 0;
 
-// TODO: should this instead take a filepath
 Buffer *
 buffer_create(FILE *file)
 {
-	Buffer *const buffer = malloc(sizeof(*buffer));
-	if (!buffer) {
+	Buffer *const buffer =
+		mmap(NULL, BUFFER_ALLOC_SIZE, PROT_READ | PROT_WRITE,
+		     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (buffer == MAP_FAILED) {
 		return NULL;
 	}
+
 	memset(buffer, 0, sizeof(*buffer));
 
 	buffer->write_to = file;
+	buffer->text = (char *)(buffer + 1);
 
 	if (file) {
 		fseek(file, 0, SEEK_END);
 		size_t length = ftell(file);
 		fseek(file, 0, SEEK_SET);
 
-		buffer->text = malloc(length);
-		if (!buffer->text) {
-			free(buffer);
-			return NULL;
-		}
-
 		fread(buffer->text, 1, length, file);
-
 		buffer->text_len = length;
 	} else {
-		buffer->text = malloc(MIN_BUFFER_TEXT_LENGTH);
-		if (!buffer->text) {
-			free(buffer);
-			return NULL;
-		}
-		memset(buffer->text, 0, MIN_BUFFER_TEXT_LENGTH);
-
-		buffer->text_len = MIN_BUFFER_TEXT_LENGTH;
+		memset(buffer->text, 0, MAX_BUFFER_TEXT_LEN);
+		buffer->text_len = 0;
 	}
 
 	buffers[buffer_count] = buffer;
@@ -49,19 +40,17 @@ buffer_create(FILE *file)
 	return buffer;
 }
 
-// TODO: should this close the FILE*
 void
-buffer_destory(Buffer *buffer)
+buffer_destroy(Buffer *buffer)
 {
-	for (BufferIndex i = 0; i < buffer_count; i++) {
+	for (BufferIndex i = 0; i < buffer_count; ++i) {
 		if (buffers[i] == buffer) {
+			buffers[i] = buffers[buffer_count - 1];
+			buffers[buffer_count - 1] = NULL;
 			buffer_count--;
-			buffers[i] = buffers[buffer_count];
-			buffers[buffer_count] = NULL;
 			break;
 		}
 	}
 
-	free(buffer->text);
-	free(buffer);
+	munmap(buffer, BUFFER_ALLOC_SIZE);
 }

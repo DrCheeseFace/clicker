@@ -1,5 +1,5 @@
 #include "../window.h"
-#include "../utils.h"
+#include "../internal.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <mr_utils.h>
@@ -7,7 +7,7 @@
 #include <string.h>
 
 internal void init_mouse_event(XEvent GeneralEvent,
-			       struct clicker_WindowEvent *event);
+			       struct clk_WindowEvent *event);
 
 global_variable GC context;
 global_variable Window root_window;
@@ -31,7 +31,7 @@ window_cleanup(void)
 	XCloseDisplay(main_display);
 }
 
-clicker_Window *
+clk_Window *
 window_create(int window_x, int window_y, int window_w, int window_h,
 	      int border_w)
 {
@@ -57,14 +57,14 @@ window_create(int window_x, int window_y, int window_w, int window_h,
 
 	XMapWindow(main_display, main_window);
 
-	clicker_Window *window = malloc(sizeof(Window));
+	clk_Window *window = malloc(sizeof(Window));
 	*(Window *)window = main_window;
 
 	return window;
 }
 
 int
-window_destroy(clicker_Window *window)
+window_destroy(clk_Window *window)
 {
 	int err = XDestroyWindow(main_display, *(Window *)window);
 	free(window);
@@ -73,45 +73,45 @@ window_destroy(clicker_Window *window)
 }
 
 void
-window_get_event(clicker_Window *window, struct clicker_WindowEvent *event)
+window_get_event(clk_Window *window, struct clk_WindowEvent *event)
 {
 	XEvent GeneralEvent = { 0 };
 	XNextEvent(main_display, &GeneralEvent);
 
-	event->type = CLICKER_WINDOW_EVENT_TYPE_NONE;
+	event->type = CLK_WINDOW_EVENT_TYPE_NONE;
 
 	if (GeneralEvent.xany.window != *(Window *)window)
 		return;
 
 	switch (GeneralEvent.type) {
 	case KeyPress:
-		event->type = CLICKER_WINDOW_EVENT_TYPE_KEYDOWN;
+		event->type = CLK_WINDOW_EVENT_TYPE_KEYDOWN;
 		event->val.keycode = GeneralEvent.xkey.keycode;
 		break;
 
 	case KeyRelease:
-		event->type = CLICKER_WINDOW_EVENT_TYPE_KEYUP;
+		event->type = CLK_WINDOW_EVENT_TYPE_KEYUP;
 		event->val.keycode = GeneralEvent.xkey.keycode;
 		break;
 
 	case ButtonPress:
-		event->type = CLICKER_WINDOW_EVENT_TYPE_MOUSEDOWN;
+		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEDOWN;
 		init_mouse_event(GeneralEvent, event);
 		break;
 
 	case ButtonRelease:
-		event->type = CLICKER_WINDOW_EVENT_TYPE_MOUSEUP;
+		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEUP;
 		init_mouse_event(GeneralEvent, event);
 		break;
 
 	case MotionNotify:
-		event->type = CLICKER_WINDOW_EVENT_TYPE_MOUSEMOVE;
+		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEMOVE;
 		init_mouse_event(GeneralEvent, event);
 		break;
 
 	case ClientMessage: {
 		if ((Atom)GeneralEvent.xclient.data.l[0] == wm_delete_window) {
-			event->type = CLICKER_WINDOW_EVENT_TYPE_CLOSEREQ;
+			event->type = CLK_WINDOW_EVENT_TYPE_CLOSEREQ;
 		}
 		break;
 	}
@@ -125,7 +125,7 @@ window_get_event(clicker_Window *window, struct clicker_WindowEvent *event)
 }
 
 void
-window_clear(clicker_Window *window)
+window_clear(clk_Window *window)
 {
 	XClearWindow(main_display, *(Window *)window);
 }
@@ -137,7 +137,7 @@ window_flush_display(void)
 }
 
 internal void
-init_mouse_event(XEvent GeneralEvent, struct clicker_WindowEvent *event)
+init_mouse_event(XEvent GeneralEvent, struct clk_WindowEvent *event)
 {
 	event->val.mouse.x = GeneralEvent.xbutton.x_root;
 	event->val.mouse.y = GeneralEvent.xbutton.y_root;
@@ -147,7 +147,7 @@ init_mouse_event(XEvent GeneralEvent, struct clicker_WindowEvent *event)
 }
 
 void
-window_draw_debug_snack(clicker_Window *window, const char *text)
+window_draw_debug_snack(clk_Window *window, const char *text)
 {
 	int line_height = 20;
 	int x = 10;
@@ -158,6 +158,7 @@ window_draw_debug_snack(clicker_Window *window, const char *text)
 
 	while ((newline_loc = strchr(p, '\n')) != NULL) {
 		int len = newline_loc - p;
+
 		XDrawString(main_display, *(Window *)window, context, x, y, p,
 			    len);
 		y += line_height;

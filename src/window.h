@@ -2,31 +2,31 @@
 #define WINDOW_H
 
 #include <stdint.h>
-#define WINDOW_BACKGROUND_COLOR 0x00022424;
-typedef void clicker_Window;
 
-enum clicker_WindowEventType {
-	CLICKER_WINDOW_EVENT_TYPE_NONE,
-	CLICKER_WINDOW_EVENT_TYPE_KEYDOWN,
-	CLICKER_WINDOW_EVENT_TYPE_KEYUP,
-	CLICKER_WINDOW_EVENT_TYPE_MOUSEDOWN,
-	CLICKER_WINDOW_EVENT_TYPE_MOUSEUP,
-	CLICKER_WINDOW_EVENT_TYPE_MOUSEMOVE,
-	CLICKER_WINDOW_EVENT_TYPE_CLOSEREQ,
+typedef void clk_Window;
+
+enum clk_WindowEventType {
+	CLK_WINDOW_EVENT_TYPE_NONE,
+	CLK_WINDOW_EVENT_TYPE_KEYDOWN,
+	CLK_WINDOW_EVENT_TYPE_KEYUP,
+	CLK_WINDOW_EVENT_TYPE_MOUSEDOWN,
+	CLK_WINDOW_EVENT_TYPE_MOUSEUP,
+	CLK_WINDOW_EVENT_TYPE_MOUSEMOVE,
+	CLK_WINDOW_EVENT_TYPE_CLOSEREQ,
 };
 
-enum clicker_WindowEventButton {
-	CLICKER_WINDOW_EVENT_BUTTON1,
-	CLICKER_WINDOW_EVENT_BUTTON2,
-	CLICKER_WINDOW_EVENT_BUTTON3,
+enum clk_WindowEventButton {
+	CLK_WINDOW_EVENT_BUTTON1,
+	CLK_WINDOW_EVENT_BUTTON2,
+	CLK_WINDOW_EVENT_BUTTON3,
 };
 
-struct clicker_WindowEvent {
-	enum clicker_WindowEventType type;
+struct clk_WindowEvent {
+	enum clk_WindowEventType type;
 
 	union {
 		struct {
-			enum clicker_WindowEventButton button;
+			enum clk_WindowEventButton button;
 			uint16_t x;
 			uint16_t y;
 		} mouse;
@@ -39,19 +39,17 @@ struct clicker_WindowEvent {
 void window_init(void);
 void window_cleanup(void);
 
-clicker_Window *window_create(int window_x, int window_y, int window_w,
-			      int window_h, int border_w);
+clk_Window *window_create(int window_x, int window_y, int window_w,
+			  int window_h, int border_w);
+int window_destroy(clk_Window *window);
 
-int window_destroy(clicker_Window *window);
+void window_get_event(clk_Window *window, struct clk_WindowEvent *event);
 
-void window_get_event(clicker_Window *window,
-		      struct clicker_WindowEvent *event);
-
-void window_clear(clicker_Window *window);
+void window_clear(clk_Window *window);
 void window_flush_display(void);
 
 #ifdef DEBUG
-void window_draw_debug_snack(clicker_Window *window, const char *text);
+void window_draw_debug_snack(clk_Window *window, const char *text);
 #endif
 
 #endif
