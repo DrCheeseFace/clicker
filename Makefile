@@ -34,8 +34,8 @@ TARGET_TEST    = $(OBJ_DIR)/test.out
 TARGET_SPACERS = $(OBJ_DIR)/spacers
 
 # DO BETTER LOL
-SRC_LIB        = src/main.c src/buffers.c src/utils.c src/x11/window.c
-SRC_TEST_MAIN  = test/test.c src/buffers.c src/utils.c src/x11/window.c
+SRC_LIB        = src/main.c src/posix/buffers.c src/utils.c src/x11/window.c
+SRC_TEST_MAIN  = test/test.c src/posix/buffers.c src/utils.c src/x11/window.c
 
 SRC_MR_UTILS   = src/mr_utils/src/mrd_debug.c \
                  src/mr_utils/src/mrl_logger.c \

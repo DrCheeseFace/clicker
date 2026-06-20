@@ -4,6 +4,10 @@
 #include <mr_utils.h>
 #include <stdint.h>
 
+//
+// MISC
+//
+
 #define VERSION "0.0.1"
 #define PROGRAM_NAME "clicker"
 
@@ -25,35 +29,99 @@ void log_help(void);
 void log_version(void);
 Err process_arg(char *arg);
 
+//
+// BUFFER
+//
+
 // NOTE: uint8_max because typedef uint8_t BufferIndex;
 #define MAX_BUFFERS UINT8_MAX
 typedef uint8_t BufferIndex;
 
 typedef struct {
 	FILE *write_to;
+
+	size_t size;
+
 	size_t gap_start;
 	size_t gap_end;
-	size_t cursor_x;
-	size_t cursor_y;
+
 	char text[];
 } Buffer;
 
-#define DEFAULT_BUFFER_ALLOC_SIZE 1 * 1024 * 1024 // 1mb
-#define DEFAULT_BUFFER_MAX_TEXT_LENGTH                                         \
-	(DEFAULT_BUFFER_ALLOC_SIZE - sizeof(Buffer))
+#define BUFFER_MAX_TEXT_LENGTH(size) ((size) - sizeof(Buffer))
 
 extern BufferIndex buffer_count;
 extern Buffer *buffers[MAX_BUFFERS];
 
-Buffer *buffer_create(FILE *file);
+// size rounded up to multiple of pagesize
+Buffer *buffer_create(FILE *file, size_t size);
 void buffer_destroy(Buffer *buffer);
-void buffer_move_gap(Buffer *buffer, size_t gap_start);
 
-void buffer_insert_char(Buffer *buffer, char c);
-void buffer_delete_char(Buffer *buffer);
+void buffer_move_gap(Buffer *const buffer, size_t gap_start);
+
+// may update global buffers and reallocate
+void buffer_insert_char(Buffer **buffer, char c);
+
+void buffer_expand_gap_by_page(Buffer **buffer_ptr);
+
+void buffer_delete_char(Buffer *const buffer);
 
 #define BUFFERS_GET_BUFFER_BY_IDX(idx) (buffers[(idx)])
 
+//
+// WINDOW
+//
+
 #define WINDOW_BACKGROUND_COLOR 0x00022424;
+
+typedef void clk_Window;
+
+enum clk_WindowEventType {
+	CLK_WINDOW_EVENT_TYPE_NONE,
+	CLK_WINDOW_EVENT_TYPE_KEYDOWN,
+	CLK_WINDOW_EVENT_TYPE_KEYUP,
+	CLK_WINDOW_EVENT_TYPE_MOUSEDOWN,
+	CLK_WINDOW_EVENT_TYPE_MOUSEUP,
+	CLK_WINDOW_EVENT_TYPE_MOUSEMOVE,
+	CLK_WINDOW_EVENT_TYPE_CLOSEREQ,
+};
+
+enum clk_WindowEventMouse {
+	CLK_WINDOW_EVENT_MOUSE1,
+	CLK_WINDOW_EVENT_MOUSE2,
+	CLK_WINDOW_EVENT_MOUSE3,
+	CLK_WINDOW_EVENT_MOUSE_SCROLL_UP,
+	CLK_WINDOW_EVENT_MOUSE_SCROLL_DOWN,
+
+};
+
+struct clk_WindowEvent {
+	enum clk_WindowEventType type;
+
+	union {
+		struct {
+			enum clk_WindowEventMouse button;
+			uint16_t x;
+			uint16_t y;
+		} mouse;
+
+		uint16_t keycode;
+
+	} val;
+};
+
+clk_Window *window_create(int window_x, int window_y, int window_w,
+			  int window_h, int border_w);
+int window_destroy(clk_Window *window);
+
+void window_get_event(clk_Window *window, struct clk_WindowEvent *event);
+
+void window_clear(clk_Window *window);
+
+void window_flush_display(clk_Window *window);
+
+#ifdef DEBUG
+void window_draw_debug_snack(clk_Window *window, const char *text);
+#endif
 
 #endif

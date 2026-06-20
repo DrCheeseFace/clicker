@@ -1,4 +1,3 @@
-#include "../window.h"
 #include "../internal.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

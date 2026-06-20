@@ -1,5 +1,4 @@
 #include "./internal.h"
-#include "./window.h"
 #include <mr_utils.h>
 #include <unistd.h>
 

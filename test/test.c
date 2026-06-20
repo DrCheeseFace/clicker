@@ -3,16 +3,18 @@
 #include <mr_utils/mrt_test.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
+global_variable long BUFFER_SIZE;
 MRT_TEST_GROUP(create_destroy_buffer)
 {
-	Buffer *buffer = buffer_create(NULL);
+	Buffer *buffer = buffer_create(NULL, BUFFER_SIZE);
 	MRT_ASSERT(buffer != NULL, "create buffer no file");
 	buffer_destroy(buffer);
 
-	buffer = buffer_create(NULL);
-	Buffer *buffer1 = buffer_create(NULL);
-	Buffer *buffer2 = buffer_create(NULL);
+	buffer = buffer_create(NULL, BUFFER_SIZE);
+	Buffer *buffer1 = buffer_create(NULL, BUFFER_SIZE);
+	Buffer *buffer2 = buffer_create(NULL, BUFFER_SIZE);
 
 	MRT_ASSERT(buffer != NULL, "create buffer no file");
 	MRT_ASSERT(buffer1 != NULL, "create buffer1 no file");
@@ -27,7 +29,7 @@ MRT_TEST_GROUP(create_destroy_buffer)
 	MRT_ASSERT(buffers[1] == buffer2, "delete and replace from end");
 	MRT_ASSERT(buffers[2] == NULL, "moved buffer pointer set to null");
 
-	buffer1 = buffer_create(NULL);
+	buffer1 = buffer_create(NULL, BUFFER_SIZE);
 
 	buffer_destroy(buffer2);
 	MRT_ASSERT(buffers[2] == NULL, "moved buffer pointer set to null");
@@ -45,7 +47,7 @@ MRT_TEST_GROUP(create_destroy_buffer)
 	fputs(filestr, file);
 	rewind(file);
 
-	buffer = buffer_create(file);
+	buffer = buffer_create(file, BUFFER_SIZE);
 
 	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, filestr,
 			   strlen(filestr)) == 0,
@@ -64,26 +66,26 @@ MRT_TEST_GROUP(move_buffer_gap)
 	fputs(filestr, file);
 	rewind(file);
 
-	Buffer *buffer = buffer_create(file);
+	Buffer *buffer = buffer_create(file, BUFFER_SIZE);
 
 	// init state
 	MRT_ASSERT(buffer->gap_start == 0, "init gap start 0");
-	MRT_ASSERT(buffer->gap_end ==
-			   DEFAULT_BUFFER_MAX_TEXT_LENGTH - strlen(filestr),
+	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_TEXT_LENGTH(buffer->size) -
+					      strlen(filestr),
 		   "init gap end");
 
 	// same gap position
 	buffer_move_gap(buffer, 0);
 	MRT_ASSERT(buffer->gap_start == 0, "move gap to 0 gap start");
-	MRT_ASSERT(buffer->gap_end ==
-			   DEFAULT_BUFFER_MAX_TEXT_LENGTH - strlen(filestr),
+	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_TEXT_LENGTH(buffer->size) -
+					      strlen(filestr),
 		   "move gap to 0 gap end");
 
 	// move gap right
 	buffer_move_gap(buffer, 5);
 	MRT_ASSERT(buffer->gap_start == 5, "move gap right to 5 start");
-	MRT_ASSERT(buffer->gap_end ==
-			   DEFAULT_BUFFER_MAX_TEXT_LENGTH - strlen(filestr) + 5,
+	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_TEXT_LENGTH(buffer->size) -
+					      strlen(filestr) + 5,
 		   "move gap right to 5 end");
 	MRT_ASSERT(strncmp(buffer->text, "01234", 5) == 0,
 		   "text before gap strncmp");
@@ -93,8 +95,8 @@ MRT_TEST_GROUP(move_buffer_gap)
 	// move gap left
 	buffer_move_gap(buffer, 2);
 	MRT_ASSERT(buffer->gap_start == 2, "move gap left to 2 start");
-	MRT_ASSERT(buffer->gap_end ==
-			   DEFAULT_BUFFER_MAX_TEXT_LENGTH - strlen(filestr) + 2,
+	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_TEXT_LENGTH(buffer->size) -
+					      strlen(filestr) + 2,
 		   "move gap left to 2 end");
 	MRT_ASSERT(strncmp(buffer->text, "01", 2) == 0,
 		   "text before gap strncmp");
@@ -105,7 +107,7 @@ MRT_TEST_GROUP(move_buffer_gap)
 	buffer_move_gap(buffer, strlen(filestr));
 	MRT_ASSERT(buffer->gap_start == strlen(filestr),
 		   "move gap to absolute end start");
-	MRT_ASSERT(buffer->gap_end == DEFAULT_BUFFER_MAX_TEXT_LENGTH,
+	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_TEXT_LENGTH(buffer->size),
 		   "move gap to absolute end end");
 
 	buffer_destroy(buffer);
@@ -114,17 +116,17 @@ MRT_TEST_GROUP(move_buffer_gap)
 
 MRT_TEST_GROUP(write_delete_char)
 {
-	Buffer *buffer = buffer_create(NULL);
-	buffer_insert_char(buffer, '0');
-	buffer_insert_char(buffer, '1');
-	buffer_insert_char(buffer, '2');
-	buffer_insert_char(buffer, '3');
-	buffer_insert_char(buffer, '4');
-	buffer_insert_char(buffer, '5');
-	buffer_insert_char(buffer, '6');
-	buffer_insert_char(buffer, '7');
-	buffer_insert_char(buffer, '8');
-	buffer_insert_char(buffer, '9');
+	Buffer *buffer = buffer_create(NULL, BUFFER_SIZE);
+	buffer_insert_char(&buffer, '0');
+	buffer_insert_char(&buffer, '1');
+	buffer_insert_char(&buffer, '2');
+	buffer_insert_char(&buffer, '3');
+	buffer_insert_char(&buffer, '4');
+	buffer_insert_char(&buffer, '5');
+	buffer_insert_char(&buffer, '6');
+	buffer_insert_char(&buffer, '7');
+	buffer_insert_char(&buffer, '8');
+	buffer_insert_char(&buffer, '9');
 
 	// move gap right
 	buffer_move_gap(buffer, 5);
@@ -134,7 +136,7 @@ MRT_TEST_GROUP(write_delete_char)
 	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, "56789", 5) == 0,
 		   "text after gap strncmp");
 
-	buffer_insert_char(buffer, 'c');
+	buffer_insert_char(&buffer, 'c');
 
 	MRT_ASSERT(strncmp(buffer->text, "01234c", 6) == 0,
 		   "text before gap strncmp after insert");
@@ -151,6 +153,32 @@ MRT_TEST_GROUP(write_delete_char)
 	buffer_destroy(buffer);
 }
 
+MRT_TEST_GROUP(buffer_expand)
+{
+	Buffer *buffer = buffer_create(NULL, BUFFER_SIZE);
+	size_t initial_size = buffer->size;
+
+	buffer_expand_gap_by_page(&buffer);
+
+	MRT_ASSERT(buffer->size == initial_size + sysconf(_SC_PAGESIZE),
+		   "buffer size increased by page size");
+
+	buffer_insert_char(&buffer, 'a');
+
+	MRT_ASSERT(buffer->text[0] == 'a',
+		   "buffer data integrity after expansion");
+
+	// manually set full buffer
+	buffer->gap_end = buffer->gap_start;
+	// should cause a page allocation
+	buffer_insert_char(&buffer, 'a');
+	MRT_ASSERT(
+		buffer->size == initial_size + (2 * sysconf(_SC_PAGESIZE)),
+		"buffer size increased by page size due to buffer_insert_char");
+
+	buffer_destroy(buffer);
+}
+
 MRT_TEST_GROUP(debug_test)
 {
 	MRT_ASSERT(1 == 1, "sanity check");
@@ -162,16 +190,15 @@ main(void)
 	MrlLogger *logger = mrl_create(stderr, TRUE, FALSE);
 	MrtContext *ctx = mrt_ctx_create(logger);
 
+	BUFFER_SIZE = sysconf(_SC_PAGESIZE);
+
 	MRT_REGISTER_TEST_GROUP(ctx, debug_test);
 	MRT_REGISTER_TEST_GROUP(ctx, create_destroy_buffer);
 	MRT_REGISTER_TEST_GROUP(ctx, move_buffer_gap);
 	MRT_REGISTER_TEST_GROUP(ctx, write_delete_char);
+	MRT_REGISTER_TEST_GROUP(ctx, buffer_expand);
 
-#ifdef DEBUG
 	Err err = mrt_ctx_run(ctx, FALSE);
-#else
-	Err err = mrt_ctx_run(ctx, TRUE);
-#endif
 
 	mrt_ctx_destroy(ctx);
 	mrl_destroy(logger);

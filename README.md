@@ -5,7 +5,8 @@ mouse oriented text editor
 # TODO
 - [x] gap buffers for text
 - [x] write delete char
-- [ ] auto expanding buffer space
+- [x] auto expanding buffer space
+- [ ] mutex on readwrite to buffers for async
 - [ ] draw cursor
 - [ ] change buffers
 - [ ] tags cscope
