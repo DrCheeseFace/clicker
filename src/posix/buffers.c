@@ -5,27 +5,34 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+internal int next_empty_buffer(void);
+
 Buffer *buffers[MAX_BUFFERS] = { NULL };
 
 Err
-buffer_create(FILE *file, size_t size, BufferID buffer_id)
+buffer_create(FILE *file, size_t size, BufferID *new_buffer_id)
 {
+	int next_free_buffer_space = next_empty_buffer();
+	if (next_free_buffer_space == NOT_FOUND) {
+		return NOT_FOUND;
+	}
+
 	long page_size = sysconf(_SC_PAGESIZE);
 	if (page_size == -1) {
 		return ERR;
 	}
-	size = (size + (size_t)page_size - 1) & ~((size_t)page_size - 1);
+	size = (size + page_size - 1) & ~(page_size - 1);
 
-	Buffer *const buffer = mmap(NULL, size, PROT_READ | PROT_WRITE,
-				    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	if (buffer == MAP_FAILED) {
+	Buffer *const new_buffer = mmap(NULL, size, PROT_READ | PROT_WRITE,
+					MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (new_buffer == MAP_FAILED) {
 		return ERR;
 	}
 
-	memset(buffer, 0, sizeof(*buffer));
+	memset(new_buffer, 0, sizeof(*new_buffer));
 
-	buffer->write_to = file;
-	buffer->size = size;
+	new_buffer->write_to = file;
+	new_buffer->size = size;
 
 	if (file) {
 		fseek(file, 0, SEEK_END);
@@ -40,19 +47,32 @@ buffer_create(FILE *file, size_t size, BufferID buffer_id)
 			length = BUFFER_MAX_TEXT_LENGTH(size);
 		}
 
-		buffer->gap_start = 0;
-		buffer->gap_end = BUFFER_MAX_TEXT_LENGTH(size) - length;
+		new_buffer->gap_start = 0;
+		new_buffer->gap_end = BUFFER_MAX_TEXT_LENGTH(size) - length;
 
-		fread(buffer->text + buffer->gap_end, 1, length, file);
+		fread(new_buffer->text + new_buffer->gap_end, 1, length, file);
 	} else {
-		memset(buffer->text, 0, BUFFER_MAX_TEXT_LENGTH(size));
-		buffer->gap_start = 0;
-		buffer->gap_end = BUFFER_MAX_TEXT_LENGTH(size);
+		memset(new_buffer->text, 0, BUFFER_MAX_TEXT_LENGTH(size));
+		new_buffer->gap_start = 0;
+		new_buffer->gap_end = BUFFER_MAX_TEXT_LENGTH(size);
 	}
 
-	buffers[buffer_id] = buffer;
+	buffers[next_free_buffer_space] = new_buffer;
+	*new_buffer_id = next_free_buffer_space;
 
 	return OK;
+}
+
+internal int
+next_empty_buffer(void)
+{
+	for (uint8_t i = 0; i < MAX_BUFFERS; i++) {
+		if (buffers[i] == NULL) {
+			return i;
+		}
+	}
+
+	return NOT_FOUND;
 }
 
 void

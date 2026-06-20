@@ -9,37 +9,44 @@ global_variable long BUFFER_SIZE;
 
 MRT_TEST_GROUP(create_destroy_buffer)
 {
-	buffer_create(NULL, BUFFER_SIZE, 0);
-	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(0);
+	BufferID b_id;
+	BufferID b_id1;
+	BufferID b_id2;
+
+	Err err = buffer_create(NULL, BUFFER_SIZE, &b_id);
+	MRT_ASSERT(err == OK, "create buffer res OK");
+	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 	MRT_ASSERT(buffer != NULL, "create buffer no file");
-	buffer_destroy(0);
+	buffer_destroy(b_id);
 
-	buffer_create(NULL, BUFFER_SIZE, 0);
-	buffer_create(NULL, BUFFER_SIZE, 1);
-	buffer_create(NULL, BUFFER_SIZE, 2);
+	buffer_create(NULL, BUFFER_SIZE, &b_id);
+	buffer_create(NULL, BUFFER_SIZE, &b_id1);
+	buffer_create(NULL, BUFFER_SIZE, &b_id2);
 
-	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(0) != NULL,
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id) != NULL,
 		   "create buffer 0 no file");
-	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(1) != NULL,
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id1) != NULL,
 		   "create buffer 1 no file");
-	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(2) != NULL,
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id2) != NULL,
 		   "create buffer 2 no file");
 
-	buffer_destroy(1);
+	buffer_destroy(b_id1);
 
-	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(0) != NULL, "buffer 0 exists");
-	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(2) != NULL, "buffer 2 exists");
-	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(1) == NULL, "buffer 1 destroyed");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id) != NULL, "buffer 0 exists");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id2) != NULL, "buffer 2 exists");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id1) == NULL,
+		   "buffer 1 destroyed");
 
-	buffer_create(NULL, BUFFER_SIZE, 1);
+	buffer_create(NULL, BUFFER_SIZE, &b_id1);
 
 	buffer_destroy(2);
-	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(2) == NULL, "buffer 2 destroyed");
-	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(0) != NULL, "buffer 0 exists");
-	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(1) != NULL, "buffer 1 exists");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id2) == NULL,
+		   "buffer 2 destroyed");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id) != NULL, "buffer 0 exists");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id1) != NULL, "buffer 1 exists");
 
-	buffer_destroy(0);
-	buffer_destroy(1);
+	buffer_destroy(b_id);
+	buffer_destroy(b_id1);
 
 	const char *filestr =
 		"this is a file\nnew lined here\ttab here\n\tnewline tab here\n\nnewline above here\n\n";
@@ -49,14 +56,14 @@ MRT_TEST_GROUP(create_destroy_buffer)
 	fputs(filestr, file);
 	rewind(file);
 
-	buffer_create(file, BUFFER_SIZE, 0);
-	buffer = BUFFERS_GET_BUFFER_BY_ID(0);
+	buffer_create(file, BUFFER_SIZE, &b_id);
+	buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 
 	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, filestr,
 			   strlen(filestr)) == 0,
 		   "filled buffer with file contents");
 
-	buffer_destroy(0);
+	buffer_destroy(b_id);
 	fclose(file);
 }
 
@@ -69,8 +76,8 @@ MRT_TEST_GROUP(move_buffer_gap)
 	fputs(filestr, file);
 	rewind(file);
 
-	BufferID b_id = 0;
-	buffer_create(file, BUFFER_SIZE, b_id);
+	BufferID b_id;
+	buffer_create(file, BUFFER_SIZE, &b_id);
 	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 
 	// init state
@@ -121,8 +128,8 @@ MRT_TEST_GROUP(move_buffer_gap)
 
 MRT_TEST_GROUP(write_delete_char)
 {
-	BufferID b_id = 0;
-	buffer_create(NULL, BUFFER_SIZE, b_id);
+	BufferID b_id;
+	buffer_create(NULL, BUFFER_SIZE, &b_id);
 	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 
 	buffer_insert_char(b_id, '0');
@@ -163,8 +170,8 @@ MRT_TEST_GROUP(write_delete_char)
 
 MRT_TEST_GROUP(buffer_expand)
 {
-	BufferID b_id = 0;
-	buffer_create(NULL, BUFFER_SIZE, b_id);
+	BufferID b_id;
+	buffer_create(NULL, BUFFER_SIZE, &b_id);
 	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 	size_t initial_size = buffer->size;
 

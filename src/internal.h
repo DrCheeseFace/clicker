@@ -52,7 +52,10 @@ typedef struct {
 extern Buffer *buffers[MAX_BUFFERS];
 
 // size rounded up to multiple of pagesize
-Err buffer_create(FILE *file, size_t size, BufferID buffer_id);
+// populates new_buffer_id with created buffer id
+// ERR if memory allocation fails
+// NOT_FOUND if free buffer space found
+Err buffer_create(FILE *file, size_t size, BufferID *new_buffer_id);
 void buffer_destroy(BufferID buffer_id);
 
 void buffer_move_gap(BufferID buffer_id, size_t gap_start);
