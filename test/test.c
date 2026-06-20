@@ -6,38 +6,40 @@
 #include <unistd.h>
 
 global_variable long BUFFER_SIZE;
+
 MRT_TEST_GROUP(create_destroy_buffer)
 {
-	Buffer *buffer = buffer_create(NULL, BUFFER_SIZE);
+	buffer_create(NULL, BUFFER_SIZE, 0);
+	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(0);
 	MRT_ASSERT(buffer != NULL, "create buffer no file");
-	buffer_destroy(buffer);
+	buffer_destroy(0);
 
-	buffer = buffer_create(NULL, BUFFER_SIZE);
-	Buffer *buffer1 = buffer_create(NULL, BUFFER_SIZE);
-	Buffer *buffer2 = buffer_create(NULL, BUFFER_SIZE);
+	buffer_create(NULL, BUFFER_SIZE, 0);
+	buffer_create(NULL, BUFFER_SIZE, 1);
+	buffer_create(NULL, BUFFER_SIZE, 2);
 
-	MRT_ASSERT(buffer != NULL, "create buffer no file");
-	MRT_ASSERT(buffer1 != NULL, "create buffer1 no file");
-	MRT_ASSERT(buffer2 != NULL, "create buffer2 no file");
-	MRT_ASSERT(buffer_count == 3, "buffer_count check");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(0) != NULL,
+		   "create buffer 0 no file");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(1) != NULL,
+		   "create buffer 1 no file");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(2) != NULL,
+		   "create buffer 2 no file");
 
-	buffer_destroy(buffer1);
+	buffer_destroy(1);
 
-	MRT_ASSERT(buffer != NULL, "buffer exists");
-	MRT_ASSERT(buffer2 != NULL, "buffer2 exists");
-	MRT_ASSERT(buffer_count == 2, "buffer_count check");
-	MRT_ASSERT(buffers[1] == buffer2, "delete and replace from end");
-	MRT_ASSERT(buffers[2] == NULL, "moved buffer pointer set to null");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(0) != NULL, "buffer 0 exists");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(2) != NULL, "buffer 2 exists");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(1) == NULL, "buffer 1 destroyed");
 
-	buffer1 = buffer_create(NULL, BUFFER_SIZE);
+	buffer_create(NULL, BUFFER_SIZE, 1);
 
-	buffer_destroy(buffer2);
-	MRT_ASSERT(buffers[2] == NULL, "moved buffer pointer set to null");
-	MRT_ASSERT(buffers[0] == buffer, "buffer exists");
-	MRT_ASSERT(buffers[1] == buffer1, "buffer1 exists");
+	buffer_destroy(2);
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(2) == NULL, "buffer 2 destroyed");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(0) != NULL, "buffer 0 exists");
+	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(1) != NULL, "buffer 1 exists");
 
-	buffer_destroy(buffer);
-	buffer_destroy(buffer1);
+	buffer_destroy(0);
+	buffer_destroy(1);
 
 	const char *filestr =
 		"this is a file\nnew lined here\ttab here\n\tnewline tab here\n\nnewline above here\n\n";
@@ -47,13 +49,14 @@ MRT_TEST_GROUP(create_destroy_buffer)
 	fputs(filestr, file);
 	rewind(file);
 
-	buffer = buffer_create(file, BUFFER_SIZE);
+	buffer_create(file, BUFFER_SIZE, 0);
+	buffer = BUFFERS_GET_BUFFER_BY_ID(0);
 
 	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, filestr,
 			   strlen(filestr)) == 0,
 		   "filled buffer with file contents");
 
-	buffer_destroy(buffer);
+	buffer_destroy(0);
 	fclose(file);
 }
 
@@ -66,7 +69,9 @@ MRT_TEST_GROUP(move_buffer_gap)
 	fputs(filestr, file);
 	rewind(file);
 
-	Buffer *buffer = buffer_create(file, BUFFER_SIZE);
+	BufferID b_id = 0;
+	buffer_create(file, BUFFER_SIZE, b_id);
+	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 
 	// init state
 	MRT_ASSERT(buffer->gap_start == 0, "init gap start 0");
@@ -75,14 +80,14 @@ MRT_TEST_GROUP(move_buffer_gap)
 		   "init gap end");
 
 	// same gap position
-	buffer_move_gap(buffer, 0);
+	buffer_move_gap(b_id, 0);
 	MRT_ASSERT(buffer->gap_start == 0, "move gap to 0 gap start");
 	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_TEXT_LENGTH(buffer->size) -
 					      strlen(filestr),
 		   "move gap to 0 gap end");
 
 	// move gap right
-	buffer_move_gap(buffer, 5);
+	buffer_move_gap(b_id, 5);
 	MRT_ASSERT(buffer->gap_start == 5, "move gap right to 5 start");
 	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_TEXT_LENGTH(buffer->size) -
 					      strlen(filestr) + 5,
@@ -93,7 +98,7 @@ MRT_TEST_GROUP(move_buffer_gap)
 		   "text after gap strncmp");
 
 	// move gap left
-	buffer_move_gap(buffer, 2);
+	buffer_move_gap(b_id, 2);
 	MRT_ASSERT(buffer->gap_start == 2, "move gap left to 2 start");
 	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_TEXT_LENGTH(buffer->size) -
 					      strlen(filestr) + 2,
@@ -104,66 +109,72 @@ MRT_TEST_GROUP(move_buffer_gap)
 		   "text after gap strncmp");
 
 	// move gap to the end
-	buffer_move_gap(buffer, strlen(filestr));
+	buffer_move_gap(b_id, strlen(filestr));
 	MRT_ASSERT(buffer->gap_start == strlen(filestr),
 		   "move gap to absolute end start");
 	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_TEXT_LENGTH(buffer->size),
 		   "move gap to absolute end end");
 
-	buffer_destroy(buffer);
+	buffer_destroy(b_id);
 	fclose(file);
 }
 
 MRT_TEST_GROUP(write_delete_char)
 {
-	Buffer *buffer = buffer_create(NULL, BUFFER_SIZE);
-	buffer_insert_char(&buffer, '0');
-	buffer_insert_char(&buffer, '1');
-	buffer_insert_char(&buffer, '2');
-	buffer_insert_char(&buffer, '3');
-	buffer_insert_char(&buffer, '4');
-	buffer_insert_char(&buffer, '5');
-	buffer_insert_char(&buffer, '6');
-	buffer_insert_char(&buffer, '7');
-	buffer_insert_char(&buffer, '8');
-	buffer_insert_char(&buffer, '9');
+	BufferID b_id = 0;
+	buffer_create(NULL, BUFFER_SIZE, b_id);
+	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
+
+	buffer_insert_char(b_id, '0');
+	buffer_insert_char(b_id, '1');
+	buffer_insert_char(b_id, '2');
+	buffer_insert_char(b_id, '3');
+	buffer_insert_char(b_id, '4');
+	buffer_insert_char(b_id, '5');
+	buffer_insert_char(b_id, '6');
+	buffer_insert_char(b_id, '7');
+	buffer_insert_char(b_id, '8');
+	buffer_insert_char(b_id, '9');
 
 	// move gap right
-	buffer_move_gap(buffer, 5);
+	buffer_move_gap(b_id, 5);
 
 	MRT_ASSERT(strncmp(buffer->text, "01234", 5) == 0,
 		   "text before gap strncmp");
 	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, "56789", 5) == 0,
 		   "text after gap strncmp");
 
-	buffer_insert_char(&buffer, 'c');
+	buffer_insert_char(b_id, 'c');
 
 	MRT_ASSERT(strncmp(buffer->text, "01234c", 6) == 0,
 		   "text before gap strncmp after insert");
 	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, "56789", 5) == 0,
 		   "text after gap strncmp after insert");
 
-	buffer_delete_char(buffer);
+	buffer_delete_char(b_id);
 
 	MRT_ASSERT(strncmp(buffer->text, "01234", 5) == 0,
 		   "text before gap strncmp");
 	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, "56789", 5) == 0,
 		   "text after gap strncmp");
 
-	buffer_destroy(buffer);
+	buffer_destroy(b_id);
 }
 
 MRT_TEST_GROUP(buffer_expand)
 {
-	Buffer *buffer = buffer_create(NULL, BUFFER_SIZE);
+	BufferID b_id = 0;
+	buffer_create(NULL, BUFFER_SIZE, b_id);
+	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 	size_t initial_size = buffer->size;
 
-	buffer_expand_gap_by_page(&buffer);
+	buffer_expand_gap_by_page(b_id);
+	buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 
 	MRT_ASSERT(buffer->size == initial_size + sysconf(_SC_PAGESIZE),
 		   "buffer size increased by page size");
 
-	buffer_insert_char(&buffer, 'a');
+	buffer_insert_char(b_id, 'a');
 
 	MRT_ASSERT(buffer->text[0] == 'a',
 		   "buffer data integrity after expansion");
@@ -171,12 +182,14 @@ MRT_TEST_GROUP(buffer_expand)
 	// manually set full buffer
 	buffer->gap_end = buffer->gap_start;
 	// should cause a page allocation
-	buffer_insert_char(&buffer, 'a');
+	buffer_insert_char(b_id, 'a');
+
+	buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 	MRT_ASSERT(
 		buffer->size == initial_size + (2 * sysconf(_SC_PAGESIZE)),
 		"buffer size increased by page size due to buffer_insert_char");
 
-	buffer_destroy(buffer);
+	buffer_destroy(b_id);
 }
 
 MRT_TEST_GROUP(debug_test)

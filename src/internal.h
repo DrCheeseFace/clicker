@@ -33,9 +33,8 @@ Err process_arg(char *arg);
 // BUFFER
 //
 
-// NOTE: uint8_max because typedef uint8_t BufferIndex;
 #define MAX_BUFFERS UINT8_MAX
-typedef uint8_t BufferIndex;
+typedef uint8_t BufferID;
 
 typedef struct {
 	FILE *write_to;
@@ -50,23 +49,22 @@ typedef struct {
 
 #define BUFFER_MAX_TEXT_LENGTH(size) ((size) - sizeof(Buffer))
 
-extern BufferIndex buffer_count;
 extern Buffer *buffers[MAX_BUFFERS];
 
 // size rounded up to multiple of pagesize
-Buffer *buffer_create(FILE *file, size_t size);
-void buffer_destroy(Buffer *buffer);
+Err buffer_create(FILE *file, size_t size, BufferID buffer_id);
+void buffer_destroy(BufferID buffer_id);
 
-void buffer_move_gap(Buffer *const buffer, size_t gap_start);
+void buffer_move_gap(BufferID buffer_id, size_t gap_start);
 
 // may update global buffers and reallocate
-void buffer_insert_char(Buffer **buffer, char c);
+void buffer_insert_char(BufferID buffer_id, char c);
 
-void buffer_expand_gap_by_page(Buffer **buffer_ptr);
+void buffer_expand_gap_by_page(BufferID buffer_id);
 
-void buffer_delete_char(Buffer *const buffer);
+void buffer_delete_char(BufferID buffer_id);
 
-#define BUFFERS_GET_BUFFER_BY_IDX(idx) (buffers[(idx)])
+#define BUFFERS_GET_BUFFER_BY_ID(idx) (buffers[(idx)])
 
 //
 // WINDOW

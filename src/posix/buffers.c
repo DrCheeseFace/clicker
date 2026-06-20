@@ -6,21 +6,20 @@
 #include <unistd.h>
 
 Buffer *buffers[MAX_BUFFERS] = { NULL };
-BufferIndex buffer_count = 0;
 
-Buffer *
-buffer_create(FILE *file, size_t size)
+Err
+buffer_create(FILE *file, size_t size, BufferID buffer_id)
 {
 	long page_size = sysconf(_SC_PAGESIZE);
 	if (page_size == -1) {
-		return NULL;
+		return ERR;
 	}
 	size = (size + (size_t)page_size - 1) & ~((size_t)page_size - 1);
 
 	Buffer *const buffer = mmap(NULL, size, PROT_READ | PROT_WRITE,
 				    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (buffer == MAP_FAILED) {
-		return NULL;
+		return ERR;
 	}
 
 	memset(buffer, 0, sizeof(*buffer));
@@ -51,30 +50,22 @@ buffer_create(FILE *file, size_t size)
 		buffer->gap_end = BUFFER_MAX_TEXT_LENGTH(size);
 	}
 
-	buffers[buffer_count] = buffer;
-	buffer_count++;
+	buffers[buffer_id] = buffer;
 
-	return buffer;
+	return OK;
 }
 
 void
-buffer_destroy(Buffer *buffer)
+buffer_destroy(BufferID buffer_id)
 {
-	for (BufferIndex i = 0; i < buffer_count; ++i) {
-		if (buffers[i] == buffer) {
-			buffers[i] = buffers[buffer_count - 1];
-			buffers[buffer_count - 1] = NULL;
-			buffer_count--;
-			break;
-		}
-	}
-
-	munmap(buffer, buffer->size);
+	munmap(buffers[buffer_id], buffers[buffer_id]->size);
+	buffers[buffer_id] = NULL;
 }
 
 void
-buffer_move_gap(Buffer *const buffer, size_t gap_start)
+buffer_move_gap(BufferID buffer_id, size_t gap_start)
 {
+	Buffer *buffer = buffers[buffer_id];
 	if (buffer->gap_start == gap_start)
 		return;
 
@@ -99,29 +90,29 @@ buffer_move_gap(Buffer *const buffer, size_t gap_start)
 }
 
 void
-buffer_insert_char(Buffer **buffer_ptr, char c)
+buffer_insert_char(BufferID buffer_id, char c)
 {
-	if ((*buffer_ptr)->gap_start == (*buffer_ptr)->gap_end) {
-		buffer_expand_gap_by_page(buffer_ptr);
-		ASSERT((*buffer_ptr) != NULL);
+	if (buffers[buffer_id]->gap_start == buffers[buffer_id]->gap_end) {
+		buffer_expand_gap_by_page(buffer_id);
 	}
 
-	*((*buffer_ptr)->text + (*buffer_ptr)->gap_start) = c;
-	(*buffer_ptr)->gap_start++;
+	Buffer *buffer = buffers[buffer_id];
+	*(buffer->text + buffer->gap_start) = c;
+	buffer->gap_start++;
 }
 
 void
-buffer_delete_char(Buffer *const buffer)
+buffer_delete_char(BufferID buffer_id)
 {
-	if (buffer->gap_start != 0) {
-		buffer->gap_start--;
+	if (buffers[buffer_id]->gap_start != 0) {
+		buffers[buffer_id]->gap_start--;
 	}
 }
 
 void
-buffer_expand_gap_by_page(Buffer **buffer_ptr)
+buffer_expand_gap_by_page(BufferID buffer_id)
 {
-	Buffer *old_buffer = *buffer_ptr;
+	Buffer *old_buffer = buffers[buffer_id];
 	long page_size = sysconf(_SC_PAGESIZE);
 	if (page_size == -1) {
 		return;
@@ -139,16 +130,16 @@ buffer_expand_gap_by_page(Buffer **buffer_ptr)
 	memcpy(new_buffer, old_buffer, old_buffer->size);
 
 	size_t bytes_to_copy =
-		old_buffer->size - sizeof(*old_buffer) - old_buffer->gap_end;
+		BUFFER_MAX_TEXT_LENGTH(old_buffer->size) - old_buffer->gap_end;
 	new_buffer->gap_end =
-		(new_buffer_size - sizeof(*old_buffer)) - bytes_to_copy;
+		BUFFER_MAX_TEXT_LENGTH(new_buffer_size) - bytes_to_copy;
 
 	new_buffer->size = new_buffer_size;
 
 	memmove(new_buffer->text + new_buffer->gap_end,
 		old_buffer->text + old_buffer->gap_end, bytes_to_copy);
 
-	*buffer_ptr = new_buffer;
+	buffers[buffer_id] = new_buffer;
 
 	munmap(old_buffer, old_buffer->size);
 }
