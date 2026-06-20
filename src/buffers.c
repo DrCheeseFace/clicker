@@ -11,7 +11,7 @@ Buffer *
 buffer_create(FILE *file)
 {
 	Buffer *const buffer =
-		mmap(NULL, BUFFER_ALLOC_SIZE, PROT_READ | PROT_WRITE,
+		mmap(NULL, DEFAULT_BUFFER_ALLOC_SIZE, PROT_READ | PROT_WRITE,
 		     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (buffer == MAP_FAILED) {
 		return NULL;
@@ -30,18 +30,18 @@ buffer_create(FILE *file)
 			length = 0;
 		}
 
-		if ((size_t)length > MAX_BUFFER_TEXT_LEN) {
-			length = MAX_BUFFER_TEXT_LEN;
+		if ((size_t)length > DEFAULT_BUFFER_MAX_TEXT_LENGTH) {
+			length = DEFAULT_BUFFER_MAX_TEXT_LENGTH;
 		}
 
 		buffer->gap_start = 0;
-		buffer->gap_end = MAX_BUFFER_TEXT_LEN - length;
+		buffer->gap_end = DEFAULT_BUFFER_MAX_TEXT_LENGTH - length;
 
 		fread(buffer->text + buffer->gap_end, 1, length, file);
 	} else {
-		memset(buffer->text, 0, MAX_BUFFER_TEXT_LEN);
+		memset(buffer->text, 0, DEFAULT_BUFFER_MAX_TEXT_LENGTH);
 		buffer->gap_start = 0;
-		buffer->gap_end = MAX_BUFFER_TEXT_LEN;
+		buffer->gap_end = DEFAULT_BUFFER_MAX_TEXT_LENGTH;
 	}
 
 	buffers[buffer_count] = buffer;
@@ -62,7 +62,7 @@ buffer_destroy(Buffer *buffer)
 		}
 	}
 
-	munmap(buffer, BUFFER_ALLOC_SIZE);
+	munmap(buffer, DEFAULT_BUFFER_ALLOC_SIZE);
 }
 
 void
@@ -89,4 +89,21 @@ buffer_move_gap(Buffer *buffer, size_t gap_start)
 
 	buffer->gap_start = gap_start;
 	return;
+}
+
+void
+buffer_insert_char(Buffer *buffer, char c)
+{
+	if (buffer->gap_start != buffer->gap_end) {
+		*(buffer->text + buffer->gap_start) = c;
+		buffer->gap_start++;
+	}
+}
+
+void
+buffer_delete_char(Buffer *buffer)
+{
+	if (buffer->gap_start != 0) {
+		buffer->gap_start--;
+	}
 }

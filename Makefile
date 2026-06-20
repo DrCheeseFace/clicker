@@ -101,6 +101,7 @@ tags:
 	echo /usr/include/stdlib.h >> ./cscope.files
 	echo /usr/include/unistd.h >> ./cscope.files
 	echo /usr/include/math.h >> ./cscope.files
+	echo /usr/include/sys/mman.h >> ./cscope.files
 	find /usr/include/X11 -type f -name '*.[ch]' 2>/dev/null >> ./cscope.files
 	cscope -b -q -k
 	ctags-universal -L ./cscope.files -f ./tags --extras=+q --fields=+n --extras=+p --kinds-c=+p

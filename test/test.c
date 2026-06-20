@@ -65,23 +65,25 @@ MRT_TEST_GROUP(move_buffer_gap)
 	rewind(file);
 
 	Buffer *buffer = buffer_create(file);
-	memcpy(buffer->text + buffer->gap_end, filestr, strlen(filestr));
 
 	// init state
 	MRT_ASSERT(buffer->gap_start == 0, "init gap start 0");
-	MRT_ASSERT(buffer->gap_end == MAX_BUFFER_TEXT_LEN - strlen(filestr),
+	MRT_ASSERT(buffer->gap_end ==
+			   DEFAULT_BUFFER_MAX_TEXT_LENGTH - strlen(filestr),
 		   "init gap end");
 
 	// same gap position
 	buffer_move_gap(buffer, 0);
 	MRT_ASSERT(buffer->gap_start == 0, "move gap to 0 gap start");
-	MRT_ASSERT(buffer->gap_end == MAX_BUFFER_TEXT_LEN - strlen(filestr),
+	MRT_ASSERT(buffer->gap_end ==
+			   DEFAULT_BUFFER_MAX_TEXT_LENGTH - strlen(filestr),
 		   "move gap to 0 gap end");
 
 	// move gap right
 	buffer_move_gap(buffer, 5);
 	MRT_ASSERT(buffer->gap_start == 5, "move gap right to 5 start");
-	MRT_ASSERT(buffer->gap_end == MAX_BUFFER_TEXT_LEN - strlen(filestr) + 5,
+	MRT_ASSERT(buffer->gap_end ==
+			   DEFAULT_BUFFER_MAX_TEXT_LENGTH - strlen(filestr) + 5,
 		   "move gap right to 5 end");
 	MRT_ASSERT(strncmp(buffer->text, "01234", 5) == 0,
 		   "text before gap strncmp");
@@ -91,7 +93,8 @@ MRT_TEST_GROUP(move_buffer_gap)
 	// move gap left
 	buffer_move_gap(buffer, 2);
 	MRT_ASSERT(buffer->gap_start == 2, "move gap left to 2 start");
-	MRT_ASSERT(buffer->gap_end == MAX_BUFFER_TEXT_LEN - strlen(filestr) + 2,
+	MRT_ASSERT(buffer->gap_end ==
+			   DEFAULT_BUFFER_MAX_TEXT_LENGTH - strlen(filestr) + 2,
 		   "move gap left to 2 end");
 	MRT_ASSERT(strncmp(buffer->text, "01", 2) == 0,
 		   "text before gap strncmp");
@@ -102,11 +105,50 @@ MRT_TEST_GROUP(move_buffer_gap)
 	buffer_move_gap(buffer, strlen(filestr));
 	MRT_ASSERT(buffer->gap_start == strlen(filestr),
 		   "move gap to absolute end start");
-	MRT_ASSERT(buffer->gap_end == MAX_BUFFER_TEXT_LEN,
+	MRT_ASSERT(buffer->gap_end == DEFAULT_BUFFER_MAX_TEXT_LENGTH,
 		   "move gap to absolute end end");
 
 	buffer_destroy(buffer);
 	fclose(file);
+}
+
+MRT_TEST_GROUP(write_delete_char)
+{
+	Buffer *buffer = buffer_create(NULL);
+	buffer_insert_char(buffer, '0');
+	buffer_insert_char(buffer, '1');
+	buffer_insert_char(buffer, '2');
+	buffer_insert_char(buffer, '3');
+	buffer_insert_char(buffer, '4');
+	buffer_insert_char(buffer, '5');
+	buffer_insert_char(buffer, '6');
+	buffer_insert_char(buffer, '7');
+	buffer_insert_char(buffer, '8');
+	buffer_insert_char(buffer, '9');
+
+	// move gap right
+	buffer_move_gap(buffer, 5);
+
+	MRT_ASSERT(strncmp(buffer->text, "01234", 5) == 0,
+		   "text before gap strncmp");
+	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, "56789", 5) == 0,
+		   "text after gap strncmp");
+
+	buffer_insert_char(buffer, 'c');
+
+	MRT_ASSERT(strncmp(buffer->text, "01234c", 6) == 0,
+		   "text before gap strncmp after insert");
+	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, "56789", 5) == 0,
+		   "text after gap strncmp after insert");
+
+	buffer_delete_char(buffer);
+
+	MRT_ASSERT(strncmp(buffer->text, "01234", 5) == 0,
+		   "text before gap strncmp");
+	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, "56789", 5) == 0,
+		   "text after gap strncmp");
+
+	buffer_destroy(buffer);
 }
 
 MRT_TEST_GROUP(debug_test)
@@ -123,6 +165,7 @@ main(void)
 	MRT_REGISTER_TEST_GROUP(ctx, debug_test);
 	MRT_REGISTER_TEST_GROUP(ctx, create_destroy_buffer);
 	MRT_REGISTER_TEST_GROUP(ctx, move_buffer_gap);
+	MRT_REGISTER_TEST_GROUP(ctx, write_delete_char);
 
 #ifdef DEBUG
 	Err err = mrt_ctx_run(ctx, FALSE);

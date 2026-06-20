@@ -4,8 +4,9 @@ mouse oriented text editor
 
 # TODO
 - [x] gap buffers for text
+- [x] write delete char
+- [ ] auto expanding buffer space
 - [ ] draw cursor
-- [ ] write delete char
 - [ ] change buffers
 - [ ] tags cscope
     - [ ] go to definition
