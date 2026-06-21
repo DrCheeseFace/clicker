@@ -8,20 +8,29 @@
 internal int next_empty_buffer(void);
 
 Buffer *buffers[MAX_BUFFERS] = { NULL };
+size_t system_page_size;
 
 Err
-buffer_create(FILE *file, size_t size, BufferID *new_buffer_id)
+buffers_init(void)
 {
-	int next_free_buffer_space = next_empty_buffer();
+	const long size = sysconf(_SC_PAGESIZE);
+	if (size == -1) {
+		return ERR;
+	}
+
+	system_page_size = size;
+	return OK;
+}
+
+Err
+buffer_create(FILE *const file, size_t size, BufferID *const new_buffer_id)
+{
+	const int next_free_buffer_space = next_empty_buffer();
 	if (next_free_buffer_space == NOT_FOUND) {
 		return NOT_FOUND;
 	}
 
-	long page_size = sysconf(_SC_PAGESIZE);
-	if (page_size == -1) {
-		return ERR;
-	}
-	size = (size + page_size - 1) & ~(page_size - 1);
+	size = (size + system_page_size - 1) & ~(system_page_size - 1);
 
 	Buffer *const new_buffer = mmap(NULL, size, PROT_READ | PROT_WRITE,
 					MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -76,30 +85,27 @@ next_empty_buffer(void)
 }
 
 void
-buffer_destroy(BufferID buffer_id)
+buffer_destroy(const BufferID buffer_id)
 {
 	munmap(buffers[buffer_id], buffers[buffer_id]->size);
 	buffers[buffer_id] = NULL;
 }
 
 void
-buffer_move_gap(BufferID buffer_id, size_t gap_start)
+buffer_move_gap(const BufferID buffer_id, const size_t gap_start)
 {
-	Buffer *buffer = buffers[buffer_id];
+	Buffer *const buffer = buffers[buffer_id];
 	if (buffer->gap_start == gap_start)
 		return;
 
-	size_t bytes_to_move;
-
 	if (gap_start < buffer->gap_start) {
-		bytes_to_move = buffer->gap_start - gap_start;
+		const size_t bytes_to_move = buffer->gap_start - gap_start;
 		memmove(buffer->text + buffer->gap_end - bytes_to_move,
 			buffer->text + buffer->gap_start - bytes_to_move,
 			bytes_to_move);
-
 		buffer->gap_end = buffer->gap_end - bytes_to_move;
 	} else {
-		bytes_to_move = gap_start - buffer->gap_start;
+		const size_t bytes_to_move = gap_start - buffer->gap_start;
 		memmove(buffer->text + buffer->gap_start,
 			buffer->text + buffer->gap_end, bytes_to_move);
 		buffer->gap_end = buffer->gap_end + bytes_to_move;
@@ -110,19 +116,19 @@ buffer_move_gap(BufferID buffer_id, size_t gap_start)
 }
 
 void
-buffer_insert_char(BufferID buffer_id, char c)
+buffer_insert_char(const BufferID buffer_id, const char c)
 {
 	if (buffers[buffer_id]->gap_start == buffers[buffer_id]->gap_end) {
 		buffer_expand_gap_by_page(buffer_id);
 	}
 
-	Buffer *buffer = buffers[buffer_id];
+	Buffer *const buffer = buffers[buffer_id];
 	*(buffer->text + buffer->gap_start) = c;
 	buffer->gap_start++;
 }
 
 void
-buffer_delete_char(BufferID buffer_id)
+buffer_delete_char(const BufferID buffer_id)
 {
 	if (buffers[buffer_id]->gap_start != 0) {
 		buffers[buffer_id]->gap_start--;
@@ -130,15 +136,11 @@ buffer_delete_char(BufferID buffer_id)
 }
 
 void
-buffer_expand_gap_by_page(BufferID buffer_id)
+buffer_expand_gap_by_page(const BufferID buffer_id)
 {
-	Buffer *old_buffer = buffers[buffer_id];
-	long page_size = sysconf(_SC_PAGESIZE);
-	if (page_size == -1) {
-		return;
-	}
+	Buffer *const old_buffer = buffers[buffer_id];
 
-	size_t new_buffer_size = old_buffer->size + page_size;
+	const size_t new_buffer_size = old_buffer->size + system_page_size;
 
 	Buffer *const new_buffer =
 		mmap(NULL, new_buffer_size, PROT_READ | PROT_WRITE,
@@ -149,7 +151,7 @@ buffer_expand_gap_by_page(BufferID buffer_id)
 
 	memcpy(new_buffer, old_buffer, old_buffer->size);
 
-	size_t bytes_to_copy =
+	const size_t bytes_to_copy =
 		BUFFER_MAX_TEXT_LENGTH(old_buffer->size) - old_buffer->gap_end;
 	new_buffer->gap_end =
 		BUFFER_MAX_TEXT_LENGTH(new_buffer_size) - bytes_to_copy;

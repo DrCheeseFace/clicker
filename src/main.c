@@ -21,6 +21,7 @@ main(int argc, char **argv)
 		}
 	}
 
+	buffers_init();
 	clk_Window *clicker_window = window_create(0, 0, 800, 600, 0);
 
 	struct clk_WindowEvent clicker_event = { 0 };

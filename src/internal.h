@@ -50,12 +50,14 @@ typedef struct {
 #define BUFFER_MAX_TEXT_LENGTH(size) ((size) - sizeof(Buffer))
 
 extern Buffer *buffers[MAX_BUFFERS];
+extern size_t system_page_size;
 
 // size rounded up to multiple of pagesize
 // populates new_buffer_id with created buffer id
 // ERR if memory allocation fails
 // NOT_FOUND if free buffer space found
-Err buffer_create(FILE *file, size_t size, BufferID *new_buffer_id);
+Err buffers_init(void);
+Err buffer_create(FILE *const file, size_t size, BufferID *const new_buffer_id);
 void buffer_destroy(BufferID buffer_id);
 
 void buffer_move_gap(BufferID buffer_id, size_t gap_start);
@@ -113,16 +115,17 @@ struct clk_WindowEvent {
 
 clk_Window *window_create(int window_x, int window_y, int window_w,
 			  int window_h, int border_w);
-int window_destroy(clk_Window *window);
+int window_destroy(clk_Window *const window);
 
-void window_get_event(clk_Window *window, struct clk_WindowEvent *event);
+void window_get_event(clk_Window *const window,
+		      struct clk_WindowEvent *const event);
 
-void window_clear(clk_Window *window);
+void window_clear(clk_Window *const window);
 
-void window_flush_display(clk_Window *window);
+void window_flush_display(clk_Window *const window);
 
 #ifdef DEBUG
-void window_draw_debug_snack(clk_Window *window, const char *text);
+void window_draw_debug_snack(clk_Window *const window, const char *text);
 #endif
 
 #endif

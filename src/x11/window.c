@@ -14,7 +14,7 @@ struct x11_Window {
 };
 
 internal void
-window_init(struct x11_Window *window)
+window_init(struct x11_Window *const window)
 {
 	window->main_display = XOpenDisplay(0);
 
@@ -34,7 +34,8 @@ clk_Window *
 window_create(int window_x, int window_y, int window_w, int window_h,
 	      int border_w)
 {
-	struct x11_Window *clicker_window = malloc(sizeof(*clicker_window));
+	struct x11_Window *const clicker_window =
+		malloc(sizeof(*clicker_window));
 	window_init(clicker_window);
 
 	int AttributeValueMask = CWBackPixel | CWEventMask;
@@ -67,9 +68,9 @@ window_create(int window_x, int window_y, int window_w, int window_h,
 }
 
 int
-window_destroy(clk_Window *clicker_window)
+window_destroy(clk_Window *const clicker_window)
 {
-	struct x11_Window *x11_window = clicker_window;
+	struct x11_Window *const x11_window = clicker_window;
 
 	int err = XDestroyWindow(x11_window->main_display,
 				 x11_window->main_window);
@@ -81,9 +82,10 @@ window_destroy(clk_Window *clicker_window)
 }
 
 void
-window_get_event(clk_Window *clicker_window, struct clk_WindowEvent *event)
+window_get_event(clk_Window *const clicker_window,
+		 struct clk_WindowEvent *const event)
 {
-	struct x11_Window *x11_window = clicker_window;
+	struct x11_Window *const x11_window = clicker_window;
 
 	XEvent GeneralEvent = { 0 };
 	XNextEvent(x11_window->main_display, &GeneralEvent);
@@ -142,23 +144,23 @@ window_get_event(clk_Window *clicker_window, struct clk_WindowEvent *event)
 }
 
 void
-window_clear(clk_Window *clicker_window)
+window_clear(clk_Window *const clicker_window)
 {
-	struct x11_Window *x11_window = clicker_window;
+	struct x11_Window *const x11_window = clicker_window;
 	XClearWindow(x11_window->main_display, x11_window->main_window);
 }
 
 void
-window_flush_display(clk_Window *clicker_window)
+window_flush_display(clk_Window *const clicker_window)
 {
-	struct x11_Window *x11_window = clicker_window;
+	struct x11_Window *const x11_window = clicker_window;
 	XFlush(x11_window->main_display);
 }
 
 void
-window_draw_debug_snack(clk_Window *clicker_window, const char *text)
+window_draw_debug_snack(clk_Window *const clicker_window, const char *text)
 {
-	struct x11_Window *x11_window = clicker_window;
+	struct x11_Window *const x11_window = clicker_window;
 
 	int line_height = 20;
 	int x = 10;

@@ -212,6 +212,7 @@ main(void)
 
 	BUFFER_SIZE = sysconf(_SC_PAGESIZE);
 
+	buffers_init();
 	MRT_REGISTER_TEST_GROUP(ctx, debug_test);
 	MRT_REGISTER_TEST_GROUP(ctx, create_destroy_buffer);
 	MRT_REGISTER_TEST_GROUP(ctx, move_buffer_gap);
