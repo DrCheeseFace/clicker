@@ -57,7 +57,11 @@ extern size_t system_page_size;
 // ERR if memory allocation fails
 // NOT_FOUND if free buffer space found
 Err buffers_init(void);
-Err buffer_create(FILE *const file, size_t size, BufferID *const new_buffer_id);
+
+Err buffer_create_blank(size_t size, BufferID *const new_buffer_id);
+
+Err buffer_create_from_file(FILE *const file, BufferID *const new_buffer_id);
+
 void buffer_destroy(BufferID buffer_id);
 
 void buffer_move_gap(BufferID buffer_id, size_t gap_start);

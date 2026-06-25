@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
-struct clk_WindowEvent clicker_event = { 0 };
+struct clk_Event clicker_event = { 0 };
 struct clk_Renderer clicker_renderer = { 0 };
 struct clk_EditorState clicker_state = { 0 };
 
@@ -17,15 +17,15 @@ MRT_TEST_GROUP(create_destroy_buffer)
 	BufferID b_id1;
 	BufferID b_id2;
 
-	Err err = buffer_create(NULL, BUFFER_SIZE, &b_id);
+	Err err = buffer_create_blank(BUFFER_SIZE, &b_id);
 	MRT_ASSERT(err == OK, "create buffer res OK");
 	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 	MRT_ASSERT(buffer != NULL, "create buffer no file");
 	buffer_destroy(b_id);
 
-	buffer_create(NULL, BUFFER_SIZE, &b_id);
-	buffer_create(NULL, BUFFER_SIZE, &b_id1);
-	buffer_create(NULL, BUFFER_SIZE, &b_id2);
+	buffer_create_blank(BUFFER_SIZE, &b_id);
+	buffer_create_blank(BUFFER_SIZE, &b_id1);
+	buffer_create_blank(BUFFER_SIZE, &b_id2);
 
 	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id) != NULL,
 		   "create buffer 0 no file");
@@ -41,7 +41,7 @@ MRT_TEST_GROUP(create_destroy_buffer)
 	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id1) == NULL,
 		   "buffer 1 destroyed");
 
-	buffer_create(NULL, BUFFER_SIZE, &b_id1);
+	buffer_create_blank(BUFFER_SIZE, &b_id1);
 
 	buffer_destroy(2);
 	MRT_ASSERT(BUFFERS_GET_BUFFER_BY_ID(b_id2) == NULL,
@@ -60,7 +60,7 @@ MRT_TEST_GROUP(create_destroy_buffer)
 	fputs(filestr, file);
 	rewind(file);
 
-	buffer_create(file, BUFFER_SIZE, &b_id);
+	buffer_create_from_file(file, &b_id);
 	buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 
 	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, filestr,
@@ -81,7 +81,7 @@ MRT_TEST_GROUP(move_buffer_gap)
 	rewind(file);
 
 	BufferID b_id;
-	buffer_create(file, BUFFER_SIZE, &b_id);
+	buffer_create_from_file(file, &b_id);
 	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 
 	// init state
@@ -133,7 +133,7 @@ MRT_TEST_GROUP(move_buffer_gap)
 MRT_TEST_GROUP(write_delete_char)
 {
 	BufferID b_id;
-	buffer_create(NULL, BUFFER_SIZE, &b_id);
+	buffer_create_blank(BUFFER_SIZE, &b_id);
 	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 
 	buffer_insert_char(b_id, '0');
@@ -175,7 +175,7 @@ MRT_TEST_GROUP(write_delete_char)
 MRT_TEST_GROUP(buffer_expand)
 {
 	BufferID b_id;
-	buffer_create(NULL, BUFFER_SIZE, &b_id);
+	buffer_create_blank(BUFFER_SIZE, &b_id);
 	Buffer *buffer = BUFFERS_GET_BUFFER_BY_ID(b_id);
 	size_t initial_size = buffer->size;
 
@@ -211,7 +211,7 @@ MRT_TEST_GROUP(debug_test)
 int
 main(void)
 {
-	MrlLogger *logger = mrl_create(stderr, TRUE, FALSE);
+	MrlLogger *logger = mrl_create(stderr, FALSE, FALSE);
 	MrtContext *ctx = mrt_ctx_create(logger);
 
 	BUFFER_SIZE = sysconf(_SC_PAGESIZE);

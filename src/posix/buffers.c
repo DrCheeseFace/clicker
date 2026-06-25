@@ -23,7 +23,57 @@ buffers_init(void)
 }
 
 Err
-buffer_create(FILE *const file, size_t size, BufferID *const new_buffer_id)
+buffer_create_from_file(FILE *const file, BufferID *const new_buffer_id)
+{
+	const int next_free_buffer_space = next_empty_buffer();
+	if (next_free_buffer_space == NOT_FOUND) {
+		return NOT_FOUND;
+	}
+
+	fseek(file, 0, SEEK_END);
+	long length = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	size_t size = (length > 0) ? (size_t)length : 0;
+
+	size = (size + system_page_size - 1) & ~(system_page_size - 1);
+
+	Buffer *const new_buffer = mmap(NULL, size, PROT_READ | PROT_WRITE,
+					MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (new_buffer == MAP_FAILED) {
+		return ERR;
+	}
+
+	memset(new_buffer, 0, sizeof(*new_buffer));
+
+	fseek(file, 0, SEEK_END);
+	length = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	if (length < 0) {
+		length = 0;
+	}
+
+	if ((size_t)length > size) {
+		length = BUFFER_MAX_TEXT_LENGTH(size);
+	}
+
+	new_buffer->gap_start = 0;
+	new_buffer->gap_end = BUFFER_MAX_TEXT_LENGTH(size) - length;
+
+	fread(new_buffer->text + new_buffer->gap_end, 1, length, file);
+
+	new_buffer->write_to = file;
+	new_buffer->size = size;
+
+	buffers[next_free_buffer_space] = new_buffer;
+	*new_buffer_id = next_free_buffer_space;
+
+	return OK;
+}
+
+Err
+buffer_create_blank(size_t size, BufferID *const new_buffer_id)
 {
 	const int next_free_buffer_space = next_empty_buffer();
 	if (next_free_buffer_space == NOT_FOUND) {
@@ -40,31 +90,12 @@ buffer_create(FILE *const file, size_t size, BufferID *const new_buffer_id)
 
 	memset(new_buffer, 0, sizeof(*new_buffer));
 
-	new_buffer->write_to = file;
+	memset(new_buffer->text, 0, BUFFER_MAX_TEXT_LENGTH(size));
+	new_buffer->gap_start = 0;
+	new_buffer->gap_end = BUFFER_MAX_TEXT_LENGTH(size);
+
+	new_buffer->write_to = NULL;
 	new_buffer->size = size;
-
-	if (file) {
-		fseek(file, 0, SEEK_END);
-		long length = ftell(file);
-		fseek(file, 0, SEEK_SET);
-
-		if (length < 0) {
-			length = 0;
-		}
-
-		if ((size_t)length > size) {
-			length = BUFFER_MAX_TEXT_LENGTH(size);
-		}
-
-		new_buffer->gap_start = 0;
-		new_buffer->gap_end = BUFFER_MAX_TEXT_LENGTH(size) - length;
-
-		fread(new_buffer->text + new_buffer->gap_end, 1, length, file);
-	} else {
-		memset(new_buffer->text, 0, BUFFER_MAX_TEXT_LENGTH(size));
-		new_buffer->gap_start = 0;
-		new_buffer->gap_end = BUFFER_MAX_TEXT_LENGTH(size);
-	}
 
 	buffers[next_free_buffer_space] = new_buffer;
 	*new_buffer_id = next_free_buffer_space;

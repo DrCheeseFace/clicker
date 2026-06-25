@@ -29,10 +29,7 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 					   filepath);
 		}
 
-		Err err = buffer_create(
-			file,
-			system_page_size, // @TODO handle size of allocation here
-			&state->current_buffer);
+		Err err = buffer_create_from_file(file, &state->current_buffer);
 		if (err == ERR) {
 			editor_set_err_msg(
 				state, "failed to create buffer from file %s",
@@ -40,8 +37,8 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 		}
 
 	} else {
-		Err err = buffer_create(NULL, system_page_size,
-					&state->current_buffer);
+		Err err = buffer_create_blank(system_page_size,
+					      &state->current_buffer);
 		if (err == ERR) {
 			editor_set_err_msg(
 				state, "failed to create buffer from file %s",
