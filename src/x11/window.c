@@ -2,6 +2,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <mr_utils.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -13,30 +14,24 @@ struct x11_Window {
 	Atom wm_delete_window;
 };
 
-internal void
-window_init(struct x11_Window *const window)
+void
+window_init(clk_Window **window, int window_x, int window_y, int window_w,
+	    int window_h, int border_w)
 {
-	window->main_display = XOpenDisplay(0);
+	struct x11_Window *const x11_window = malloc(sizeof(*x11_window));
 
-	window->root_window = XDefaultRootWindow(window->main_display);
+	x11_window->main_display = XOpenDisplay(0);
 
-	window->wm_delete_window =
-		XInternAtom(window->main_display, "WM_DELETE_WINDOW", False);
+	x11_window->root_window = XDefaultRootWindow(x11_window->main_display);
 
-	window->context = XDefaultGC(window->main_display, 0);
+	x11_window->wm_delete_window = XInternAtom(x11_window->main_display,
+						   "WM_DELETE_WINDOW", False);
 
-	XSetForeground(window->main_display, window->context,
-		       WhitePixel(window->main_display,
-				  DefaultScreen(window->main_display)));
-}
+	x11_window->context = XDefaultGC(x11_window->main_display, 0);
 
-clk_Window *
-window_create(int window_x, int window_y, int window_w, int window_h,
-	      int border_w)
-{
-	struct x11_Window *const clicker_window =
-		malloc(sizeof(*clicker_window));
-	window_init(clicker_window);
+	XSetForeground(x11_window->main_display, x11_window->context,
+		       WhitePixel(x11_window->main_display,
+				  DefaultScreen(x11_window->main_display)));
 
 	int AttributeValueMask = CWBackPixel | CWEventMask;
 	XSetWindowAttributes WindowAttributes = { 0 };
@@ -48,29 +43,27 @@ window_create(int window_x, int window_y, int window_w, int window_h,
 
 	WindowAttributes.background_pixel = WINDOW_BACKGROUND_COLOR;
 
-	clicker_window->main_window =
-		XCreateWindow(clicker_window->main_display,
-			      clicker_window->root_window, window_x, window_y,
-			      window_w, window_h, border_w, CopyFromParent,
-			      CopyFromParent, CopyFromParent,
+	x11_window->main_window =
+		XCreateWindow(x11_window->main_display, x11_window->root_window,
+			      window_x, window_y, window_w, window_h, border_w,
+			      CopyFromParent, CopyFromParent, CopyFromParent,
 			      AttributeValueMask, &WindowAttributes);
 
-	XStoreName(clicker_window->main_display, clicker_window->main_window,
+	XStoreName(x11_window->main_display, x11_window->main_window,
 		   PROGRAM_NAME);
 
-	XSetWMProtocols(clicker_window->main_display,
-			clicker_window->main_window,
-			&clicker_window->wm_delete_window, 1);
+	XSetWMProtocols(x11_window->main_display, x11_window->main_window,
+			&x11_window->wm_delete_window, 1);
 
-	XMapWindow(clicker_window->main_display, clicker_window->main_window);
+	XMapWindow(x11_window->main_display, x11_window->main_window);
 
-	return clicker_window;
+	*window = x11_window;
 }
 
 int
-window_destroy(clk_Window *const clicker_window)
+window_destroy(clk_Window *window)
 {
-	struct x11_Window *const x11_window = clicker_window;
+	struct x11_Window *const x11_window = window;
 
 	int err = XDestroyWindow(x11_window->main_display,
 				 x11_window->main_window);
@@ -82,55 +75,54 @@ window_destroy(clk_Window *const clicker_window)
 }
 
 void
-window_get_event(clk_Window *const clicker_window,
-		 struct clk_WindowEvent *const event)
+window_pol_event(void)
 {
-	struct x11_Window *const x11_window = clicker_window;
+	struct x11_Window *const x11_window = clicker_renderer.window;
 
 	XEvent GeneralEvent = { 0 };
 	XNextEvent(x11_window->main_display, &GeneralEvent);
 
-	memset(event, 0, sizeof(*event));
+	memset(&clicker_event, 0, sizeof(clicker_event));
 
 	if (GeneralEvent.xany.window != x11_window->main_window)
 		return;
 
 	switch (GeneralEvent.type) {
 	case KeyPress:
-		event->type = CLK_WINDOW_EVENT_TYPE_KEYDOWN;
-		event->val.keycode = GeneralEvent.xkey.keycode;
+		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN;
+		clicker_event.val.keycode = GeneralEvent.xkey.keycode;
 		break;
 
 	case KeyRelease:
-		event->type = CLK_WINDOW_EVENT_TYPE_KEYUP;
-		event->val.keycode = GeneralEvent.xkey.keycode;
+		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYUP;
+		clicker_event.val.keycode = GeneralEvent.xkey.keycode;
 		break;
 
 	case ButtonPress:
-		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEDOWN;
-		event->val.mouse.x = GeneralEvent.xbutton.x;
-		event->val.mouse.y = GeneralEvent.xbutton.y;
-		event->val.mouse.button = GeneralEvent.xbutton.button;
+		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEDOWN;
+		clicker_event.val.mouse.x = GeneralEvent.xbutton.x;
+		clicker_event.val.mouse.y = GeneralEvent.xbutton.y;
+		clicker_event.val.mouse.button = GeneralEvent.xbutton.button;
 		break;
 
 	case ButtonRelease:
-		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEUP;
-		event->val.mouse.x = GeneralEvent.xbutton.x;
-		event->val.mouse.y = GeneralEvent.xbutton.y;
-		event->val.mouse.button = GeneralEvent.xbutton.button;
+		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEUP;
+		clicker_event.val.mouse.x = GeneralEvent.xbutton.x;
+		clicker_event.val.mouse.y = GeneralEvent.xbutton.y;
+		clicker_event.val.mouse.button = GeneralEvent.xbutton.button;
 		break;
 
 	case MotionNotify:
-		event->type = CLK_WINDOW_EVENT_TYPE_MOUSEMOVE;
-		event->val.mouse.x = GeneralEvent.xmotion.x;
-		event->val.mouse.y = GeneralEvent.xmotion.y;
-		event->val.mouse.button = 0;
+		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEMOVE;
+		clicker_event.val.mouse.x = GeneralEvent.xmotion.x;
+		clicker_event.val.mouse.y = GeneralEvent.xmotion.y;
+		clicker_event.val.mouse.button = 0;
 		break;
 
 	case ClientMessage: {
 		if ((Atom)GeneralEvent.xclient.data.l[0] ==
 		    x11_window->wm_delete_window) {
-			event->type = CLK_WINDOW_EVENT_TYPE_CLOSEREQ;
+			clicker_event.type = CLK_WINDOW_EVENT_TYPE_CLOSEREQ;
 		}
 		break;
 	}
@@ -144,40 +136,24 @@ window_get_event(clk_Window *const clicker_window,
 }
 
 void
-window_clear(clk_Window *const clicker_window)
+window_clear(clk_Window *const window)
 {
-	struct x11_Window *const x11_window = clicker_window;
+	struct x11_Window *const x11_window = window;
 	XClearWindow(x11_window->main_display, x11_window->main_window);
 }
 
 void
-window_flush_display(clk_Window *const clicker_window)
+window_flush_display(clk_Window *window)
 {
-	struct x11_Window *const x11_window = clicker_window;
+	struct x11_Window *const x11_window = window;
 	XFlush(x11_window->main_display);
 }
 
 void
-window_draw_debug_snack(clk_Window *const clicker_window, const char *text)
+window_draw_string(clk_Window *const window, uint16_t x, uint16_t y,
+		   const char *text, int text_len)
 {
-	struct x11_Window *const x11_window = clicker_window;
-
-	int line_height = 20;
-	int x = 10;
-	int y = 20;
-
-	const char *p = text;
-	const char *newline_loc;
-
-	while ((newline_loc = strchr(p, '\n')) != NULL) {
-		int len = newline_loc - p;
-
-		XDrawString(x11_window->main_display, x11_window->main_window,
-			    x11_window->context, x, y, p, len);
-		y += line_height;
-		p = newline_loc + 1; // skip newline character
-	}
-
+	struct x11_Window *const x11_window = window;
 	XDrawString(x11_window->main_display, x11_window->main_window,
-		    x11_window->context, x, y, p, strlen(p));
+		    x11_window->context, x, y, text, text_len);
 }

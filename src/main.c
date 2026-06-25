@@ -1,6 +1,12 @@
 #include "./internal.h"
 #include <mr_utils.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
+
+struct clk_Event clicker_event = { 0 };
+struct clk_Renderer clicker_renderer = { 0 };
+struct clk_EditorState clicker_state = { 0 };
 
 int
 main(int argc, char **argv)
@@ -21,33 +27,18 @@ main(int argc, char **argv)
 		}
 	}
 
-	buffers_init();
-	clk_Window *clicker_window = window_create(0, 0, 800, 600, 0);
+	render_init(&clicker_renderer, 0, 0, 800, 600, 0);
+	editor_init(&clicker_state, NULL);
 
-	struct clk_WindowEvent clicker_event = { 0 };
+	while (clicker_state.is_running) {
+		window_pol_event();
 
-	for (;;) {
-		window_get_event(clicker_window, &clicker_event);
-		if (clicker_event.type == CLK_WINDOW_EVENT_TYPE_CLOSEREQ) {
-			break;
-		}
+		editor_simulate(&clicker_state, clicker_event);
 
-		window_clear(clicker_window);
-#ifdef DEBUG
-		char debug_event_snack_text[128];
-
-		sprintf(debug_event_snack_text,
-			"eventtype: %d \nkeybutton_val: %d \nmouse_x: %d \nmouse_y: %d",
-			clicker_event.type, clicker_event.val.keycode,
-			clicker_event.val.mouse.x, clicker_event.val.mouse.y);
-
-		window_draw_debug_snack(clicker_window, debug_event_snack_text);
-#endif
-
-		window_flush_display(clicker_window);
+		render_frame(&clicker_renderer, &clicker_state);
 	}
 
-	window_destroy(clicker_window);
+	render_free(&clicker_renderer);
 
 	return 0;
 }

@@ -5,6 +5,10 @@
 #include <string.h>
 #include <unistd.h>
 
+struct clk_WindowEvent clicker_event = { 0 };
+struct clk_Renderer clicker_renderer = { 0 };
+struct clk_EditorState clicker_state = { 0 };
+
 global_variable long BUFFER_SIZE;
 
 MRT_TEST_GROUP(create_destroy_buffer)

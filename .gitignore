@@ -6,6 +6,7 @@ compile_commands.json
 build
 cscope.*
 tags
+*~*
 
 # perf generated stuff
 *.perf

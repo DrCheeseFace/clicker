@@ -79,7 +79,13 @@ void buffer_delete_char(BufferID buffer_id);
 
 typedef void clk_Window;
 
-enum clk_WindowEventType {
+struct clk_Renderer {
+	clk_Window *window;
+};
+
+extern struct clk_Renderer clicker_renderer;
+
+enum clk_EventType {
 	CLK_WINDOW_EVENT_TYPE_NONE,
 	CLK_WINDOW_EVENT_TYPE_KEYDOWN,
 	CLK_WINDOW_EVENT_TYPE_KEYUP,
@@ -89,7 +95,7 @@ enum clk_WindowEventType {
 	CLK_WINDOW_EVENT_TYPE_CLOSEREQ,
 };
 
-enum clk_WindowEventMouse {
+enum clk_EventMouse {
 	CLK_WINDOW_EVENT_MOUSE1,
 	CLK_WINDOW_EVENT_MOUSE2,
 	CLK_WINDOW_EVENT_MOUSE3,
@@ -98,12 +104,12 @@ enum clk_WindowEventMouse {
 
 };
 
-struct clk_WindowEvent {
-	enum clk_WindowEventType type;
+struct clk_Event {
+	enum clk_EventType type;
 
 	union {
 		struct {
-			enum clk_WindowEventMouse button;
+			enum clk_EventMouse button;
 			uint16_t x;
 			uint16_t y;
 		} mouse;
@@ -113,19 +119,55 @@ struct clk_WindowEvent {
 	} val;
 };
 
-clk_Window *window_create(int window_x, int window_y, int window_w,
-			  int window_h, int border_w);
-int window_destroy(clk_Window *const window);
+extern struct clk_Event clicker_event;
 
-void window_get_event(clk_Window *const window,
-		      struct clk_WindowEvent *const event);
+void window_init(clk_Window **window, int window_x, int window_y, int window_w,
+		 int window_h, int border_w);
+
+int window_destroy(clk_Window *window);
+
+void window_pol_event(void);
 
 void window_clear(clk_Window *const window);
 
 void window_flush_display(clk_Window *const window);
 
-#ifdef DEBUG
-void window_draw_debug_snack(clk_Window *const window, const char *text);
-#endif
+void window_draw_string(clk_Window *const window, uint16_t x, uint16_t y,
+			const char *text, int text_len);
+
+//
+// RENDER
+//
+typedef struct clk_EditorState clk_EditorState;
+
+void render_init(struct clk_Renderer *const renderer, int window_x,
+		 int window_y, int window_w, int window_h, int border_w);
+
+void render_free(struct clk_Renderer *renderer);
+
+void render_frame(struct clk_Renderer *renderer, struct clk_EditorState *state);
+
+//
+// EDITOR
+//
+struct clk_EditorState {
+	Bool is_running;
+	Bool debug_mode;
+
+	char *err_str;
+
+	BufferID current_buffer;
+};
+
+void editor_init(struct clk_EditorState *state, const char *filepath);
+
+void editor_simulate(struct clk_EditorState *state, struct clk_Event event);
+
+void editor_set_err_msg(struct clk_EditorState *state, const char *err_msg,
+			...);
+
+#define EDITOR_FATAL(state, msg) editor_fatal(state, msg, __FILE__, __LINE__)
+void editor_fatal(struct clk_EditorState *state, const char *err_msg,
+		  const char *filename, int line_number);
 
 #endif
