@@ -38,7 +38,11 @@ main(int argc, char **argv)
 		render_frame(&clicker_renderer, &clicker_state);
 	}
 
+	editor_free(&clicker_state);
 	render_free(&clicker_renderer);
 
+#ifdef DEBUG
+	ASSERT(mrd_log_dump_active_allocations() == 0);
+#endif
 	return 0;
 }

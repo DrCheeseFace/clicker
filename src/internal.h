@@ -58,6 +58,8 @@ extern size_t system_page_size;
 // NOT_FOUND if free buffer space found
 Err buffers_init(void);
 
+void buffers_destroy_active_buffers(void);
+
 Err buffer_create_blank(size_t size, BufferID *const new_buffer_id);
 
 Err buffer_create_from_file(FILE *const file, BufferID *const new_buffer_id);
@@ -164,6 +166,8 @@ struct clk_EditorState {
 };
 
 void editor_init(struct clk_EditorState *state, const char *filepath);
+
+void editor_free(struct clk_EditorState *state);
 
 void editor_simulate(struct clk_EditorState *state, struct clk_Event event);
 

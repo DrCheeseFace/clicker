@@ -40,9 +40,8 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 		Err err = buffer_create_blank(system_page_size,
 					      &state->current_buffer);
 		if (err == ERR) {
-			editor_set_err_msg(
-				state, "failed to create buffer from file %s",
-				filepath);
+			editor_set_err_msg(state,
+					   "failed to create blank buffer");
 		}
 	}
 }
@@ -54,10 +53,9 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 		state->is_running = FALSE;
 	}
 
-	/* if (clicker_event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) { */
-	/* 	buffer_insert_char(test_buffer, */
-	/* 			   clicker_event.val.keycode); */
-	/* } */
+	if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) {
+		buffer_insert_char(state->current_buffer, event.val.keycode);
+	}
 }
 
 void
@@ -66,6 +64,8 @@ editor_free(struct clk_EditorState *state)
 	if (state->err_str) {
 		free(state->err_str);
 	}
+
+	buffers_destroy_active_buffers();
 }
 
 void

@@ -22,6 +22,16 @@ buffers_init(void)
 	return OK;
 }
 
+void
+buffers_destroy_active_buffers(void)
+{
+	for (BufferID i = 0; i < MAX_BUFFERS; i++) {
+		if (buffers[i]) {
+			buffer_destroy(i);
+		}
+	}
+}
+
 Err
 buffer_create_from_file(FILE *const file, BufferID *const new_buffer_id)
 {

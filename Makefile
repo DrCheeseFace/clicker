@@ -20,8 +20,10 @@ ifneq (,$(filter debug build-debug build-test-debug test-debug,$(MAKECMDGOALS)))
     BUILD_TYPE := debug
 endif
 
+# -DMRD_DEBUG_DEFAULT
+# -DMRD_DEBUG_ONLY_CALLED_AND_ERR
 ifeq ($(BUILD_TYPE),debug)
-    CFLAGS     := -O0 -g -fno-omit-frame-pointer -rdynamic -DDEBUG -DMRD_DEBUG_ONLY_CALLED_AND_ERR $(WARNINGS) $(INCLUDES)
+    CFLAGS     := -O0 -g -fno-omit-frame-pointer -rdynamic -DDEBUG -DMRD_DEBUG_DEFAULT $(WARNINGS) $(INCLUDES)
 else
     CFLAGS     := -O2 $(WARNINGS) $(INCLUDES)
 endif
