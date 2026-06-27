@@ -1,6 +1,7 @@
  test/testdata/testfile.txt
  test/testdata/testfile1.txt
 *.txt
+*.html
 .cache
 compile_commands.json
 build

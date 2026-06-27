@@ -2,8 +2,9 @@ CC          = gcc
 CSTANDARD   = c99
 
 INCLUDES    = -Iinclude -Isrc/mr_utils/include
-LDLIBS      = -lm -lX11
-# LDLIBS      += -lasan
+LDLIBS      = -lm -lX11 -lcairo
+
+#LDLIBS += -lasan
 
 WARNINGS  = -Wall -Wextra -Werror -Wpedantic -pedantic-errors
 WARNINGS += -Wpointer-arith -Wcast-align -Wwrite-strings
@@ -22,8 +23,9 @@ endif
 
 # -DMRD_DEBUG_DEFAULT
 # -DMRD_DEBUG_ONLY_CALLED_AND_ERR
+# -DMRD_DEBUG_BACKTRACE
 ifeq ($(BUILD_TYPE),debug)
-    CFLAGS     := -O0 -g -fno-omit-frame-pointer -rdynamic -DDEBUG -DMRD_DEBUG_DEFAULT $(WARNINGS) $(INCLUDES)
+    CFLAGS     := -O0 -g -fno-omit-frame-pointer -rdynamic -DDEBUG -DMRD_DEBUG_DEFAULT $(BACKTRACE) $(INCLUDES)
 else
     CFLAGS     := -O2 $(WARNINGS) $(INCLUDES)
 endif
@@ -36,8 +38,23 @@ TARGET_TEST    = $(OBJ_DIR)/test.out
 TARGET_SPACERS = $(OBJ_DIR)/spacers
 
 # DO BETTER LOL
-SRC_LIB        = src/main.c src/posix/buffers.c src/utils.c src/x11/window.c src/render.c src/editor.c
-SRC_TEST_MAIN  = test/test.c src/posix/buffers.c src/utils.c src/x11/window.c src/render.c src/editor.c
+SRC_LIB        = src/main.c \
+		 src/posix/buffers.c \
+		 src/utils.c \
+		 src/x11/window.c \
+		 src/render.c \
+		 src/editor.c \
+		 src/x11/text.c
+
+SRC_TEST_MAIN  = src/test.c \
+		 src/posix/buffers.c \
+		 src/utils.c \
+		 src/x11/window.c \
+		 src/render.c \
+		 src/editor.c \
+		 src/x11/text.c
+
+SRC_TEST_MAIN  = test/test.c src/posix/buffers.c src/utils.c src/x11/window.c src/render.c src/editor.c src/text.c
 
 SRC_MR_UTILS   = src/mr_utils/src/mrd_debug.c \
                  src/mr_utils/src/mrl_logger.c \
@@ -91,22 +108,15 @@ test-debug: build-test-debug
 
 clean:
 	rm -rf $(BUILD_DIR)
-	rm -f cscope.*
-	rm -f tags
+	rm -f TAGS
 
 tags:
-	rm -f cscope.*
-	rm -f tags
-	find ./ -name '*.c' -o -name '*.h' > ./cscope.files
-	echo /usr/include/string.h >> ./cscope.files
-	echo /usr/include/stdio.h >> ./cscope.files
-	echo /usr/include/stdlib.h >> ./cscope.files
-	echo /usr/include/unistd.h >> ./cscope.files
-	echo /usr/include/math.h >> ./cscope.files
-	echo /usr/include/sys/mman.h >> ./cscope.files
-	find /usr/include/X11 -type f -name '*.[ch]' 2>/dev/null >> ./cscope.files
-	cscope -b -q -k
-	ctags-universal -L ./cscope.files -f ./tags --extras=+q --fields=+n --extras=+p --kinds-c=+p
+	rm -f TAGS
+	find /usr/include/X11 -type f | xargs etags -a --kinds-c=+p
+	find /usr/include/cairo -type f | xargs etags -a --kinds-c=+p
+	find /usr/include/fontconfig -type f | xargs etags -a --kinds-c=+p
+	git ls-files | xargs etags -a --kinds-C=+p
+
 
 spacers: $(TARGET_SPACERS)
 

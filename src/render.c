@@ -7,30 +7,37 @@ void
 render_init(struct clk_Renderer *renderer, int window_x, int window_y,
 	    int window_w, int window_h, int border_w)
 {
-	window_init(&(renderer->window), window_x, window_y, window_w, window_h,
-		    border_w);
+	window_init(&(renderer->window_ctx), window_x, window_y, window_w,
+		    window_h, border_w);
+
+	text_init(&(renderer->text_ctx), renderer->window_ctx);
 }
 
 void
 render_free(struct clk_Renderer *renderer)
 {
-	window_destroy(renderer->window);
+	text_free(renderer->text_ctx);
+	window_destroy(renderer->window_ctx);
 }
 
 void
 render_frame(struct clk_Renderer *renderer, struct clk_EditorState *state)
 {
-	window_clear(renderer->window);
+	window_clear(renderer->window_ctx);
 
 	if (state->debug_mode) {
 		render_debug_draw_snack(renderer);
 	}
 
 	const char *teststr = "is this working";
-	window_draw_string(renderer->window, 500, 500, teststr,
+	window_draw_string(renderer->window_ctx, 500, 500, teststr,
 			   strlen(teststr));
 
-	window_flush_display(renderer->window);
+	window_draw_fill_rectangle(renderer->window_ctx, 200, 400, 100, 200);
+
+	text_debug_test(renderer->text_ctx);
+
+	window_flush_display(renderer->window_ctx);
 }
 
 internal void
@@ -55,10 +62,10 @@ render_debug_draw_snack(struct clk_Renderer *renderer)
 	while ((newline_loc = strchr(p, '\n')) != NULL) {
 		int len = newline_loc - p;
 
-		window_draw_string(renderer->window, x, y, p, len);
+		window_draw_string(renderer->window_ctx, x, y, p, len);
 		y += line_height;
 		p = newline_loc + 1; // skip newline character
 	}
 
-	window_draw_string(renderer->window, x, y, p, strlen(p));
+	window_draw_string(renderer->window_ctx, x, y, p, strlen(p));
 }

@@ -4,12 +4,16 @@
 #include <mr_utils.h>
 #include <stdint.h>
 
+#include <cairo/cairo.h>
+
 //
 // MISC
 //
 
 #define VERSION "0.0.1"
 #define PROGRAM_NAME "clicker"
+
+#define DEFAULT_FONT "Liberation Mono"
 
 #define LICENSE                                                                \
 	"BSD 3-Clause License\n"                                               \
@@ -83,13 +87,8 @@ void buffer_delete_char(BufferID buffer_id);
 
 #define WINDOW_BACKGROUND_COLOR 0x00022424;
 
+// @TODO does this gota be separate
 typedef void clk_Window;
-
-struct clk_Renderer {
-	clk_Window *window;
-};
-
-extern struct clk_Renderer clicker_renderer;
 
 enum clk_EventType {
 	CLK_WINDOW_EVENT_TYPE_NONE,
@@ -141,9 +140,40 @@ void window_flush_display(clk_Window *const window);
 void window_draw_string(clk_Window *const window, uint16_t x, uint16_t y,
 			const char *text, int text_len);
 
+void window_draw_fill_rectangle(clk_Window *const window, uint16_t x,
+				uint16_t y, uint16_t w, uint16_t h);
+
+//
+// TEXT
+//
+struct clk_Text {
+	cairo_t *cairo_ctx;
+
+	double font_ascent;
+	double font_descent;
+	double font_height;
+	double font_max_x_advance;
+	double font_max_y_advance;
+};
+
+void text_init(struct clk_Text *clicker_text, clk_Window *const window_ctx);
+
+void text_free(struct clk_Text clicker_text);
+
+// @TODO remove me
+void text_debug_test(struct clk_Text clicker_text);
+
 //
 // RENDER
 //
+
+struct clk_Renderer {
+	clk_Window *window_ctx;
+	struct clk_Text text_ctx;
+};
+
+extern struct clk_Renderer clicker_renderer;
+
 typedef struct clk_EditorState clk_EditorState;
 
 void render_init(struct clk_Renderer *const renderer, int window_x,

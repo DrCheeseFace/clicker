@@ -1,19 +1,11 @@
 #include "../internal.h"
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
+#include "x11_internal.h"
 #include <mr_utils.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-struct x11_Window {
-	GC context;
-	Window root_window;
-	Window main_window;
-	Display *main_display;
-	Atom wm_delete_window;
-};
-
+// @TODO err handling
 void
 window_init(clk_Window **window, int window_x, int window_y, int window_w,
 	    int window_h, int border_w)
@@ -77,7 +69,7 @@ window_destroy(clk_Window *window)
 void
 window_pol_event(void)
 {
-	struct x11_Window *const x11_window = clicker_renderer.window;
+	struct x11_Window *const x11_window = clicker_renderer.window_ctx;
 
 	XEvent GeneralEvent = { 0 };
 	XNextEvent(x11_window->main_display, &GeneralEvent);
@@ -156,4 +148,13 @@ window_draw_string(clk_Window *const window, uint16_t x, uint16_t y,
 	struct x11_Window *const x11_window = window;
 	XDrawString(x11_window->main_display, x11_window->main_window,
 		    x11_window->context, x, y, text, text_len);
+}
+
+void
+window_draw_fill_rectangle(clk_Window *const window, uint16_t x, uint16_t y,
+			   uint16_t w, uint16_t h)
+{
+	struct x11_Window *const x11_window = window;
+	XFillRectangle(x11_window->main_display, x11_window->main_window,
+		       x11_window->context, x, y, w, h);
 }

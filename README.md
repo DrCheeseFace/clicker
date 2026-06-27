@@ -1,18 +1,21 @@
 # clicker
-
 mouse oriented text editor
 
 # TODO
 - [x] gap buffers for text
 - [x] write delete char
 - [x] auto expanding buffer space
-- [ ] mutex on readwrite to buffers for async
 - [ ] draw cursor
-- [ ] change buffers
-- [ ] tags cscope
+- [ ] write to buffer basics
+- [ ] mouse shit
+	- [ ] mouse state struct/ mouse combo implementations
+	- [ ] option wheel
+	- [ ] change buffers
+- [ ] tags cscope xref etags?
     - [ ] go to definition
     - [ ] find references
-- [ ] suggested changes
+- [ ] suggested changes impl
     - [ ] autocomplete buffer dropdown
     - [ ] suggested changes from current buffer
     - [ ] suggested changes from project
+- [ ] mutex on readwrite to buffers for async
