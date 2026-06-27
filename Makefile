@@ -114,7 +114,6 @@ tags:
 	rm -f TAGS
 	find /usr/include/X11 -type f | xargs etags -a --kinds-c=+p
 	find /usr/include/cairo -type f | xargs etags -a --kinds-c=+p
-	find /usr/include/fontconfig -type f | xargs etags -a --kinds-c=+p
 	git ls-files | xargs etags -a --kinds-C=+p
 
 

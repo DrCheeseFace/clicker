@@ -2,12 +2,15 @@
  test/testdata/testfile1.txt
 *.txt
 *.html
+*.supp
 .cache
 compile_commands.json
 build
 cscope.*
 tags
 *~*
+TAGS
+*.log
 
 # perf generated stuff
 *.perf
