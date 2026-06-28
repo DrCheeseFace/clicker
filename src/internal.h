@@ -129,16 +129,13 @@ extern struct clk_Event clicker_event;
 void window_init(clk_Window **window, int window_x, int window_y, int window_w,
 		 int window_h, int border_w);
 
-int window_destroy(clk_Window *window);
+int window_free(clk_Window *window);
 
 void window_pol_event(void);
 
 void window_clear(clk_Window *const window);
 
 void window_flush_display(clk_Window *const window);
-
-void window_draw_string(clk_Window *const window, uint16_t x, uint16_t y,
-			const char *text, int text_len);
 
 void window_draw_fill_rectangle(clk_Window *const window, uint16_t x,
 				uint16_t y, uint16_t w, uint16_t h);
@@ -148,20 +145,42 @@ void window_draw_fill_rectangle(clk_Window *const window, uint16_t x,
 //
 struct clk_Text {
 	cairo_t *cairo_ctx;
+	cairo_surface_t *cairo_surface;
 
-	double font_ascent;
-	double font_descent;
-	double font_height;
-	double font_max_x_advance;
-	double font_max_y_advance;
+	double current_font_ascent;
+	double current_font_descent;
+	double current_font_height;
+	double current_font_max_x_advance;
+	double current_font_max_y_advance;
 };
 
 void text_init(struct clk_Text *clicker_text, clk_Window *const window_ctx);
 
 void text_free(struct clk_Text clicker_text);
 
-// @TODO remove me
-void text_debug_test(struct clk_Text clicker_text);
+void text_update_text_surface_to_window_size(struct clk_Text *clicker_text,
+					     clk_Window *const window_ctx);
+
+void text_push_attr(struct clk_Text clicker_text);
+
+void text_pop_attr(struct clk_Text clicker_text);
+
+void text_set_font_size(struct clk_Text clicker_text, double size);
+
+void text_set_font_color(struct clk_Text clicker_text, double r, double g,
+			 double b);
+
+void text_move_cursor_to(struct clk_Text clicker_text, double x, double y);
+
+void text_relative_move_cursor_to(struct clk_Text clicker_text, double x,
+				  double y);
+
+void text_update_font_extents(struct clk_Text *clicker_text);
+
+void text_write_text(struct clk_Text clicker_text, const char *text,
+		     cairo_text_extents_t *text_extents);
+
+void text_flush(struct clk_Text clicker_text);
 
 //
 // RENDER

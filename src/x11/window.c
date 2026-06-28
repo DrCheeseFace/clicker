@@ -53,7 +53,7 @@ window_init(clk_Window **window, int window_x, int window_y, int window_w,
 }
 
 int
-window_destroy(clk_Window *window)
+window_free(clk_Window *window)
 {
 	struct x11_Window *const x11_window = window;
 
@@ -119,9 +119,16 @@ window_pol_event(void)
 		break;
 	}
 
+		// use this for window resize updates
+	case ConfigureNotify: {
+		text_update_text_surface_to_window_size(
+			&clicker_renderer.text_ctx,
+			clicker_renderer.window_ctx);
+		break;
+	}
+
 	case EnterNotify:
 	case LeaveNotify:
-	case ResizeRequest:
 	default:
 		break;
 	}
@@ -139,15 +146,6 @@ window_flush_display(clk_Window *window)
 {
 	struct x11_Window *const x11_window = window;
 	XFlush(x11_window->main_display);
-}
-
-void
-window_draw_string(clk_Window *const window, uint16_t x, uint16_t y,
-		   const char *text, int text_len)
-{
-	struct x11_Window *const x11_window = window;
-	XDrawString(x11_window->main_display, x11_window->main_window,
-		    x11_window->context, x, y, text, text_len);
 }
 
 void

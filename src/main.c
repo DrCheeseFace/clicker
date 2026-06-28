@@ -42,6 +42,8 @@ main(int argc, char **argv)
 	render_free(&clicker_renderer);
 
 #ifdef DEBUG
+	cairo_debug_reset_static_data();
+
 	ASSERT(mrd_log_dump_active_allocations() == 0);
 #endif
 	return 0;
