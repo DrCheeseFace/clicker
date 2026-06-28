@@ -49,6 +49,8 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 void
 editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 {
+	state->resize_required = event.type == CLK_WINDOW_EVENT_TYPE_RESIZEREQ;
+
 	if (event.type == CLK_WINDOW_EVENT_TYPE_CLOSEREQ) {
 		state->is_running = FALSE;
 	}

@@ -7,10 +7,11 @@
 
 // @TODO err handling
 void
-window_init(clk_Window **window, int window_x, int window_y, int window_w,
-	    int window_h, int border_w)
+window_init(struct clk_Window **window, int window_x, int window_y,
+	    int window_w, int window_h, int border_w)
 {
 	struct x11_Window *const x11_window = malloc(sizeof(*x11_window));
+	*window = malloc(sizeof(**window));
 
 	x11_window->main_display = XOpenDisplay(0);
 
@@ -49,19 +50,35 @@ window_init(clk_Window **window, int window_x, int window_y, int window_w,
 
 	XMapWindow(x11_window->main_display, x11_window->main_window);
 
-	*window = x11_window;
+	(*window)->window_w = window_w;
+	(*window)->window_h = window_h;
+	(*window)->window_ctx = x11_window;
+}
+
+void
+window_update_window_size(struct clk_Window *window)
+{
+	struct x11_Window *const x11_window = window->window_ctx;
+
+	XWindowAttributes attributes;
+	XGetWindowAttributes(x11_window->main_display, x11_window->main_window,
+			     &attributes);
+
+	window->window_w = attributes.width;
+	window->window_h = attributes.height;
 }
 
 int
-window_free(clk_Window *window)
+window_free(struct clk_Window *window)
 {
-	struct x11_Window *const x11_window = window;
+	struct x11_Window *const x11_window = window->window_ctx;
 
 	int err = XDestroyWindow(x11_window->main_display,
 				 x11_window->main_window);
 
 	XCloseDisplay(x11_window->main_display);
 	free(x11_window);
+	free(window);
 
 	return err;
 }
@@ -69,7 +86,8 @@ window_free(clk_Window *window)
 void
 window_pol_event(void)
 {
-	struct x11_Window *const x11_window = clicker_renderer.window_ctx;
+	struct x11_Window *const x11_window =
+		clicker_renderer.clk_window->window_ctx;
 
 	XEvent GeneralEvent = { 0 };
 	XNextEvent(x11_window->main_display, &GeneralEvent);
@@ -119,11 +137,9 @@ window_pol_event(void)
 		break;
 	}
 
-		// use this for window resize updates
+	// use this for window resize updates
 	case ConfigureNotify: {
-		text_update_text_surface_to_window_size(
-			&clicker_renderer.text_ctx,
-			clicker_renderer.window_ctx);
+		clicker_event.type = CLK_WINDOW_EVENT_TYPE_RESIZEREQ;
 		break;
 	}
 
@@ -135,24 +151,34 @@ window_pol_event(void)
 }
 
 void
-window_clear(clk_Window *const window)
+window_clear(struct clk_Window *const window)
 {
-	struct x11_Window *const x11_window = window;
+	struct x11_Window *const x11_window = window->window_ctx;
 	XClearWindow(x11_window->main_display, x11_window->main_window);
 }
 
 void
-window_flush_display(clk_Window *window)
+window_flush_display(struct clk_Window *window)
 {
-	struct x11_Window *const x11_window = window;
+	struct x11_Window *const x11_window = window->window_ctx;
 	XFlush(x11_window->main_display);
 }
 
 void
-window_draw_fill_rectangle(clk_Window *const window, uint16_t x, uint16_t y,
-			   uint16_t w, uint16_t h)
+window_draw_fill_rectangle(struct clk_Window *const window, uint16_t x,
+			   uint16_t y, uint16_t w, uint16_t h)
 {
-	struct x11_Window *const x11_window = window;
+	struct x11_Window *const x11_window = window->window_ctx;
 	XFillRectangle(x11_window->main_display, x11_window->main_window,
 		       x11_window->context, x, y, w, h);
+}
+
+void
+window_draw_line(struct clk_Window *const window, uint16_t x1, uint16_t y1,
+		 uint16_t x2, uint16_t y2)
+{
+	struct x11_Window *const x11_window = window->window_ctx;
+
+	XDrawLine(x11_window->main_display, x11_window->main_window,
+		  x11_window->context, x1, y1, x2, y2);
 }
