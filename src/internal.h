@@ -131,23 +131,23 @@ struct clk_Event {
 
 extern struct clk_Event clicker_event;
 
-void window_init(struct clk_Window **window, int window_x, int window_y,
+void window_init(struct clk_Window *window, int window_x, int window_y,
 		 int window_w, int window_h, int border_w);
 
-int window_free(struct clk_Window *window);
+int window_free(struct clk_Window window);
 
 void window_update_window_size(struct clk_Window *window);
 
 void window_pol_event(void);
 
-void window_clear(struct clk_Window *const window);
+void window_clear(struct clk_Window window);
 
-void window_flush_display(struct clk_Window *const window);
+void window_flush_display(struct clk_Window window);
 
-void window_draw_fill_rectangle(struct clk_Window *const window, uint16_t x,
+void window_draw_fill_rectangle(struct clk_Window window, uint16_t x,
 				uint16_t y, uint16_t w, uint16_t h);
 
-void window_draw_line(struct clk_Window *const window, uint16_t x1, uint16_t y1,
+void window_draw_line(struct clk_Window window, uint16_t x1, uint16_t y1,
 		      uint16_t x2, uint16_t y2);
 
 //
@@ -164,14 +164,12 @@ struct clk_Text {
 	double current_font_max_y_advance;
 };
 
-void text_init(struct clk_Text *clicker_text,
-	       struct clk_Window *const clk_window);
+void text_init(struct clk_Text *clicker_text, struct clk_Window clk_window);
 
 void text_free(struct clk_Text clicker_text);
 
-void
-text_update_text_surface_to_window_size(struct clk_Text *clicker_text,
-					struct clk_Window *const clk_window);
+void text_update_text_surface_to_window_size(struct clk_Text *clicker_text,
+					     struct clk_Window clk_window);
 
 void text_push_attr(struct clk_Text clicker_text);
 
@@ -199,7 +197,7 @@ void text_flush(struct clk_Text clicker_text);
 //
 
 struct clk_Renderer {
-	struct clk_Window *clk_window;
+	struct clk_Window clk_window;
 	struct clk_Text clk_text;
 };
 

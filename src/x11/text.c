@@ -2,9 +2,9 @@
 #include "./x11_internal.h"
 
 void
-text_init(struct clk_Text *clicker_text, struct clk_Window *const clk_window)
+text_init(struct clk_Text *clicker_text, struct clk_Window clk_window)
 {
-	struct x11_Window *x11_window = clk_window->window_ctx;
+	struct x11_Window *x11_window = clk_window.window_ctx;
 
 	XWindowAttributes attributes;
 	XGetWindowAttributes(x11_window->main_display, x11_window->main_window,
@@ -33,9 +33,9 @@ text_init(struct clk_Text *clicker_text, struct clk_Window *const clk_window)
 
 void
 text_update_text_surface_to_window_size(struct clk_Text *clicker_text,
-					struct clk_Window *const clk_window)
+					struct clk_Window clk_window)
 {
-	struct x11_Window *x11_window = clk_window->window_ctx;
+	struct x11_Window *x11_window = clk_window.window_ctx;
 
 	cairo_destroy(clicker_text->cairo_ctx);
 	cairo_surface_destroy(clicker_text->cairo_surface);
@@ -44,7 +44,7 @@ text_update_text_surface_to_window_size(struct clk_Text *clicker_text,
 		x11_window->main_display, x11_window->main_window,
 		DefaultVisual(x11_window->main_display,
 			      DefaultScreen(x11_window->main_display)),
-		clk_window->window_w, clk_window->window_h);
+		clk_window.window_w, clk_window.window_h);
 
 	clicker_text->cairo_ctx = cairo_create(clicker_text->cairo_surface);
 
