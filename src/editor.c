@@ -1,4 +1,5 @@
 #include "internal.h"
+#include <locale.h>
 #include <mr_utils.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -44,6 +45,8 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 					   "failed to create blank buffer");
 		}
 	}
+
+	setlocale(LC_ALL, "");
 }
 
 void
@@ -55,9 +58,9 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 		state->is_running = FALSE;
 	}
 
-	if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) {
-		buffer_insert_char(state->current_buffer, event.val.keycode);
-	}
+	/* if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) { */
+	/* 	buffer_insert_char(state->current_buffer, event.val.keycode); */
+	/* } */
 }
 
 void

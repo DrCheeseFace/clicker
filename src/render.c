@@ -48,9 +48,10 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 
 	char debug_event_snack_text[128];
 	sprintf(debug_event_snack_text,
-		"eventtype: %d \nkeybutton_val: %d \nmouse_x: %d \nmouse_y: %d \ntext_len: %d",
-		clicker_event.type, clicker_event.val.keycode,
-		clicker_event.val.mouse.x, clicker_event.val.mouse.y,
+		"eventtype: %d \nkeycode: %d \nutf8: %s \nmouse_x: %d \nmouse_y: %d \ntext_len: %d",
+		clicker_event.type, clicker_event.val.key.keycode,
+		clicker_event.val.key.utf8, clicker_event.val.mouse.x,
+		clicker_event.val.mouse.y,
 		(uint16_t)(BUFFER_MAX_TEXT_LENGTH(buffers[0]->size) -
 			   (buffers[0]->gap_end - buffers[0]->gap_start)));
 

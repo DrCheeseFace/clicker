@@ -12,6 +12,8 @@ struct x11_Window {
 	Window main_window;
 	Display *main_display;
 	Atom wm_delete_window;
+	XIM xim;
+	XIC xic;
 };
 
 #endif //X11_INTENRAL_H

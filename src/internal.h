@@ -124,7 +124,10 @@ struct clk_Event {
 			uint16_t y;
 		} mouse;
 
-		uint16_t keycode;
+		struct {
+			uint16_t keycode;
+			char utf8[8];
+		} key;
 
 	} val;
 };
@@ -223,6 +226,7 @@ struct clk_EditorState {
 
 	char *err_str;
 
+	// cursor position is buffer->gap_start
 	BufferID current_buffer;
 };
 

@@ -52,6 +52,31 @@ window_init(struct clk_Window *window, int window_x, int window_y, int window_w,
 	(*window).window_w = window_w;
 	(*window).window_h = window_h;
 	(*window).window_ctx = x11_window;
+
+	// utf8 boooolshit
+	x11_window->xim = XOpenIM(x11_window->main_display, NULL, NULL, NULL);
+	x11_window->xic =
+		XCreateIC(x11_window->xim, XNInputStyle,
+			  XIMPreeditNothing | XIMStatusNothing, XNClientWindow,
+			  x11_window->main_window, XNFocusWindow,
+			  x11_window->main_window, NULL);
+}
+
+int
+window_free(struct clk_Window window)
+{
+	struct x11_Window *const x11_window = window.window_ctx;
+
+	int err = XDestroyWindow(x11_window->main_display,
+				 x11_window->main_window);
+
+	XDestroyIC(x11_window->xic);
+	XCloseIM(x11_window->xim);
+
+	XCloseDisplay(x11_window->main_display);
+	free(x11_window);
+
+	return err;
 }
 
 void
@@ -67,20 +92,6 @@ window_update_window_size(struct clk_Window *window)
 	window->window_h = attributes.height;
 }
 
-int
-window_free(struct clk_Window window)
-{
-	struct x11_Window *const x11_window = window.window_ctx;
-
-	int err = XDestroyWindow(x11_window->main_display,
-				 x11_window->main_window);
-
-	XCloseDisplay(x11_window->main_display);
-	free(x11_window);
-
-	return err;
-}
-
 void
 window_pol_event(void)
 {
@@ -90,42 +101,66 @@ window_pol_event(void)
 	XEvent GeneralEvent = { 0 };
 	XNextEvent(x11_window->main_display, &GeneralEvent);
 
+	/* xim support need to filter */
+	if (XFilterEvent(&GeneralEvent, x11_window->main_window))
+		return;
+
 	memset(&clicker_event, 0, sizeof(clicker_event));
 
 	if (GeneralEvent.xany.window != x11_window->main_window)
 		return;
 
 	switch (GeneralEvent.type) {
-	case KeyPress:
+	case KeyPress: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN;
-		clicker_event.val.keycode = GeneralEvent.xkey.keycode;
-		break;
+		clicker_event.val.key.keycode = GeneralEvent.xkey.keycode;
 
-	case KeyRelease:
+		KeySym keysym = NoSymbol;
+		int count = Xutf8LookupString(
+			x11_window->xic, &GeneralEvent.xkey,
+			clicker_event.val.key.utf8,
+			sizeof(clicker_event.val.key.utf8) - 1, &keysym,
+			NULL);
+
+		// terminatorr 
+		if (count >= 0 &&
+		    count < sizeof(clicker_event.val.key.utf8)) {
+			clicker_event.val.key.utf8[count] = '\0';
+		}
+
+		break;
+	}
+
+	case KeyRelease: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYUP;
-		clicker_event.val.keycode = GeneralEvent.xkey.keycode;
+		clicker_event.val.key.keycode = GeneralEvent.xkey.keycode;
+		clicker_event.val.key.utf8[0] = '\0';
 		break;
+	}
 
-	case ButtonPress:
+	case ButtonPress: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEDOWN;
 		clicker_event.val.mouse.x = GeneralEvent.xbutton.x;
 		clicker_event.val.mouse.y = GeneralEvent.xbutton.y;
 		clicker_event.val.mouse.button = GeneralEvent.xbutton.button;
 		break;
+	}
 
-	case ButtonRelease:
+	case ButtonRelease: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEUP;
 		clicker_event.val.mouse.x = GeneralEvent.xbutton.x;
 		clicker_event.val.mouse.y = GeneralEvent.xbutton.y;
 		clicker_event.val.mouse.button = GeneralEvent.xbutton.button;
 		break;
+	}
 
-	case MotionNotify:
+	case MotionNotify: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEMOVE;
 		clicker_event.val.mouse.x = GeneralEvent.xmotion.x;
 		clicker_event.val.mouse.y = GeneralEvent.xmotion.y;
 		clicker_event.val.mouse.button = 0;
 		break;
+	}
 
 	case ClientMessage: {
 		if ((Atom)GeneralEvent.xclient.data.l[0] ==
@@ -135,7 +170,6 @@ window_pol_event(void)
 		break;
 	}
 
-	// use this for window resize updates
 	case ConfigureNotify: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_RESIZEREQ;
 		break;

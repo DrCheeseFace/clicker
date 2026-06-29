@@ -211,7 +211,7 @@ MRT_TEST_GROUP(debug_test)
 int
 main(void)
 {
-	MrlLogger *logger = mrl_create(stderr, FALSE, FALSE);
+	MrlLogger *logger = mrl_create(stderr, TRUE, FALSE);
 	MrtContext *ctx = mrt_ctx_create(logger);
 
 	BUFFER_SIZE = sysconf(_SC_PAGESIZE);
