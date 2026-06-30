@@ -86,22 +86,25 @@ MRT_TEST_GROUP(move_buffer_gap_test)
 
 	// init state
 	MRT_ASSERT(buffer->gap_start == 0, "init gap start 0");
-	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_BYTES_LENGTH(buffer->size) -
-					      strlen(filestr),
+	MRT_ASSERT(buffer->gap_end ==
+			   BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size) -
+				   strlen(filestr),
 		   "init gap end");
 
 	// same gap position
 	buffer_move_gap(b_id, 0);
 	MRT_ASSERT(buffer->gap_start == 0, "move gap to 0 gap start");
-	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_BYTES_LENGTH(buffer->size) -
-					      strlen(filestr),
+	MRT_ASSERT(buffer->gap_end ==
+			   BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size) -
+				   strlen(filestr),
 		   "move gap to 0 gap end");
 
 	// move gap right
 	buffer_move_gap(b_id, 5);
 	MRT_ASSERT(buffer->gap_start == 5, "move gap right to 5 start");
-	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_BYTES_LENGTH(buffer->size) -
-					      strlen(filestr) + 5,
+	MRT_ASSERT(buffer->gap_end ==
+			   BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size) -
+				   strlen(filestr) + 5,
 		   "move gap right to 5 end");
 	MRT_ASSERT(strncmp(buffer->text, "01234", 5) == 0,
 		   "text before gap strncmp");
@@ -111,8 +114,9 @@ MRT_TEST_GROUP(move_buffer_gap_test)
 	// move gap left
 	buffer_move_gap(b_id, 2);
 	MRT_ASSERT(buffer->gap_start == 2, "move gap left to 2 start");
-	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_BYTES_LENGTH(buffer->size) -
-					      strlen(filestr) + 2,
+	MRT_ASSERT(buffer->gap_end ==
+			   BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size) -
+				   strlen(filestr) + 2,
 		   "move gap left to 2 end");
 	MRT_ASSERT(strncmp(buffer->text, "01", 2) == 0,
 		   "text before gap strncmp");
@@ -123,7 +127,8 @@ MRT_TEST_GROUP(move_buffer_gap_test)
 	buffer_move_gap(b_id, strlen(filestr));
 	MRT_ASSERT(buffer->gap_start == strlen(filestr),
 		   "move gap to absolute end start");
-	MRT_ASSERT(buffer->gap_end == BUFFER_MAX_BYTES_LENGTH(buffer->size),
+	MRT_ASSERT(buffer->gap_end ==
+			   BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size),
 		   "move gap to absolute end end");
 
 	buffer_destroy(b_id);

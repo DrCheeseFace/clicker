@@ -52,7 +52,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		clicker_event.type, clicker_event.val.key.keycode,
 		clicker_event.val.key.utf8, clicker_event.val.mouse.x,
 		clicker_event.val.mouse.y,
-		(uint16_t)(BUFFER_MAX_BYTES_LENGTH(buffers[0]->size) -
+		(uint16_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
 			   (buffers[0]->gap_end - buffers[0]->gap_start)));
 
 	text_set_font_size(renderer.clk_text, 20.0f);

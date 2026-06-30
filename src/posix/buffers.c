@@ -65,11 +65,11 @@ buffer_create_from_file(FILE *const file, BufferID *const new_buffer_id)
 	}
 
 	if ((size_t)length > size) {
-		length = BUFFER_MAX_BYTES_LENGTH(size);
+		length = BUFFER_MAX_TEXT_BYTES_LENGTH(size);
 	}
 
 	new_buffer->gap_start = 0;
-	new_buffer->gap_end = BUFFER_MAX_BYTES_LENGTH(size) - length;
+	new_buffer->gap_end = BUFFER_MAX_TEXT_BYTES_LENGTH(size) - length;
 
 	fread(new_buffer->text + new_buffer->gap_end, 1, length, file);
 
@@ -100,9 +100,9 @@ buffer_create_blank(size_t size, BufferID *const new_buffer_id)
 
 	memset(new_buffer, 0, sizeof(*new_buffer));
 
-	memset(new_buffer->text, 0, BUFFER_MAX_BYTES_LENGTH(size));
+	memset(new_buffer->text, 0, BUFFER_MAX_TEXT_BYTES_LENGTH(size));
 	new_buffer->gap_start = 0;
-	new_buffer->gap_end = BUFFER_MAX_BYTES_LENGTH(size);
+	new_buffer->gap_end = BUFFER_MAX_TEXT_BYTES_LENGTH(size);
 
 	new_buffer->write_to = NULL;
 	new_buffer->size = size;
@@ -183,7 +183,8 @@ buffer_get_byte_idx_of_utf8_idx(const BufferID buffer_id, size_t char_idx)
 		logical_byte_idx++;
 	}
 
-	size_t max_text_bytes_length = BUFFER_MAX_BYTES_LENGTH(buffer->size);
+	size_t max_text_bytes_length =
+		BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size);
 	for (size_t byte_idx = buffer->gap_end;
 	     byte_idx < max_text_bytes_length; byte_idx++) {
 		if (!utf8_is_continuation_byte(*(buffer->text + byte_idx))) {
@@ -260,9 +261,10 @@ buffer_expand_gap_by_page(const BufferID buffer_id)
 	memcpy(new_buffer, old_buffer, old_buffer->size);
 
 	const size_t bytes_to_copy =
-		BUFFER_MAX_BYTES_LENGTH(old_buffer->size) - old_buffer->gap_end;
+		BUFFER_MAX_TEXT_BYTES_LENGTH(old_buffer->size) -
+		old_buffer->gap_end;
 	new_buffer->gap_end =
-		BUFFER_MAX_BYTES_LENGTH(new_buffer_size) - bytes_to_copy;
+		BUFFER_MAX_TEXT_BYTES_LENGTH(new_buffer_size) - bytes_to_copy;
 
 	new_buffer->size = new_buffer_size;
 
