@@ -62,3 +62,11 @@ process_arg(char *arg)
 	}
 	return OK;
 }
+
+Bool
+utf8_is_continuation_byte(char byte)
+{
+	/* 0x80 = 0b10000000  continuation byte marker*/
+	/* 0xC0 = 0b11000000  mask*/
+	return ((uint8_t)byte & 0xC0) == 0x80;
+}

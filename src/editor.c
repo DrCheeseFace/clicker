@@ -59,7 +59,7 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 	}
 
 	/* if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) { */
-	/* 	buffer_insert_char(state->current_buffer, event.val.keycode); */
+	/* 	buffer_insert_ascii_char(state->current_buffer, event.val.key.utf8); */
 	/* } */
 }
 

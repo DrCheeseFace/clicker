@@ -32,6 +32,7 @@ enum OptionFlags {
 void log_help(void);
 void log_version(void);
 Err process_arg(char *arg);
+Bool utf8_is_continuation_byte(char byte);
 
 //
 // BUFFER
@@ -51,7 +52,7 @@ typedef struct {
 	char text[];
 } Buffer;
 
-#define BUFFER_MAX_TEXT_LENGTH(size) ((size) - sizeof(Buffer))
+#define BUFFER_MAX_BYTES_LENGTH(size) ((size) - sizeof(Buffer))
 
 extern Buffer *buffers[MAX_BUFFERS];
 extern size_t system_page_size;
@@ -70,10 +71,22 @@ Err buffer_create_from_file(FILE *const file, BufferID *const new_buffer_id);
 
 void buffer_destroy(BufferID buffer_id);
 
+// move buffer gap_start to position of char
+void buffer_move_gap_to_utf8_idx(const BufferID buffer_id,
+				 const size_t char_idx);
+
+// sets new buffer gap_start
 void buffer_move_gap(BufferID buffer_id, size_t gap_start);
 
+// byte index of utf8 char excluding buffer gap
+size_t buffer_get_byte_idx_of_utf8_idx(const BufferID buffer_id,
+				       size_t char_idx);
+
 // may update global buffers and reallocate
-void buffer_insert_char(BufferID buffer_id, char c);
+void buffer_insert_ascii_char(BufferID buffer_id, char c);
+
+// may update global buffers and reallocate
+void buffer_insert_utf8(const BufferID buffer_id, const char *c);
 
 void buffer_expand_gap_by_page(BufferID buffer_id);
 

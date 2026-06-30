@@ -116,17 +116,18 @@ window_pol_event(void)
 		clicker_event.val.key.keycode = GeneralEvent.xkey.keycode;
 
 		KeySym keysym = NoSymbol;
+
 		int count = Xutf8LookupString(
 			x11_window->xic, &GeneralEvent.xkey,
 			clicker_event.val.key.utf8,
-			sizeof(clicker_event.val.key.utf8) - 1, &keysym,
-			NULL);
+			sizeof(clicker_event.val.key.utf8) - 1, &keysym, NULL);
 
-		// terminatorr 
-		if (count >= 0 &&
-		    count < sizeof(clicker_event.val.key.utf8)) {
-			clicker_event.val.key.utf8[count] = '\0';
+		if (count < 0 ||
+		    count >= (int)sizeof(clicker_event.val.key.utf8)) {
+			count = 0;
 		}
+
+		clicker_event.val.key.utf8[count] = '\0';
 
 		break;
 	}

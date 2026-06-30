@@ -88,7 +88,7 @@ $(OBJ_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) -MD -c $< -o $@ -std=$(CSTANDARD) $(CFLAGS)
 
-test: $(TARGET_TEST)
+test: tags $(TARGET_TEST)
 	./$(TARGET_TEST)
 
 run: $(TARGET_MAIN)
