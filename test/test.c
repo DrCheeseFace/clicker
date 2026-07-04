@@ -167,7 +167,7 @@ MRT_TEST_GROUP(write_delete_char_test)
 	MRT_ASSERT(strncmp(buffer->text + buffer->gap_end, "56789", 5) == 0,
 		   "text after gap strncmp after insert");
 
-	buffer_delete_char(b_id);
+	buffer_delete_ascii_char(b_id);
 
 	MRT_ASSERT(strncmp(buffer->text, "01234", 5) == 0,
 		   "text before gap strncmp");
@@ -208,7 +208,7 @@ MRT_TEST_GROUP(buffer_expand_test)
 	buffer_destroy(b_id);
 }
 
-MRT_TEST_GROUP(buffer_insert_utf8_test)
+MRT_TEST_GROUP(buffer_insert_delete_utf8_test)
 {
 	BufferID b_id;
 	buffer_create_blank(BUFFER_SIZE, &b_id);
@@ -238,6 +238,15 @@ MRT_TEST_GROUP(buffer_insert_utf8_test)
 	MRT_ASSERT(memcmp(buffer->text + 9, c1, 1) == 0,
 		   "insert 1 byte utf-8 char");
 
+	//  chars 11 3333 4
+	//  index 01 2345 678 9
+	//                ^
+	buffer_move_gap_to_utf8_idx(b_id, 2);
+	buffer_delete_utf8_char(b_id);
+
+	size_t byte_index = buffer_get_logical_byte_idx_of_utf8_idx(b_id, 2);
+	MRT_ASSERT(byte_index == 6, "delete 2 byte utf8");
+
 	buffer_destroy(b_id);
 }
 
@@ -266,16 +275,16 @@ MRT_TEST_GROUP(buffer_test_get_byte_idx_of_utf8_idx_test)
 	//  index 01 234 5678 9
 
 	size_t byte_idx;
-	byte_idx = buffer_get_byte_idx_of_utf8_idx(b_id, 0);
+	byte_idx = buffer_get_logical_byte_idx_of_utf8_idx(b_id, 0);
 	MRT_ASSERT(byte_idx == 0, "get byte index of 0th utf8");
 
-	byte_idx = buffer_get_byte_idx_of_utf8_idx(b_id, 1);
+	byte_idx = buffer_get_logical_byte_idx_of_utf8_idx(b_id, 1);
 	MRT_ASSERT(byte_idx == 2, "get byte index of 1st utf8");
 
-	byte_idx = buffer_get_byte_idx_of_utf8_idx(b_id, 2);
+	byte_idx = buffer_get_logical_byte_idx_of_utf8_idx(b_id, 2);
 	MRT_ASSERT(byte_idx == 5, "get byte index of 3rd utf8");
 
-	byte_idx = buffer_get_byte_idx_of_utf8_idx(b_id, 3);
+	byte_idx = buffer_get_logical_byte_idx_of_utf8_idx(b_id, 3);
 	MRT_ASSERT(byte_idx == 9, "get byte index of 4th utf8");
 
 	buffer_move_gap_to_utf8_idx(b_id, 2);
@@ -321,7 +330,7 @@ main(void)
 	MRT_REGISTER_TEST_GROUP(ctx, move_buffer_gap_test);
 	MRT_REGISTER_TEST_GROUP(ctx, write_delete_char_test);
 	MRT_REGISTER_TEST_GROUP(ctx, buffer_expand_test);
-	MRT_REGISTER_TEST_GROUP(ctx, buffer_insert_utf8_test);
+	MRT_REGISTER_TEST_GROUP(ctx, buffer_insert_delete_utf8_test);
 	MRT_REGISTER_TEST_GROUP(ctx, buffer_test_get_byte_idx_of_utf8_idx_test);
 
 	Err err = mrt_ctx_run(ctx, FALSE);

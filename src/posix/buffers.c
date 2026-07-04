@@ -135,7 +135,8 @@ buffer_destroy(const BufferID buffer_id)
 void
 buffer_move_gap_to_utf8_idx(const BufferID buffer_id, const size_t char_idx)
 {
-	size_t gap_start = buffer_get_byte_idx_of_utf8_idx(buffer_id, char_idx);
+	size_t gap_start =
+		buffer_get_logical_byte_idx_of_utf8_idx(buffer_id, char_idx);
 	buffer_move_gap(buffer_id, gap_start);
 }
 
@@ -164,7 +165,8 @@ buffer_move_gap(const BufferID buffer_id, const size_t gap_start)
 }
 
 size_t
-buffer_get_byte_idx_of_utf8_idx(const BufferID buffer_id, size_t char_idx)
+buffer_get_logical_byte_idx_of_utf8_idx(const BufferID buffer_id,
+					size_t char_idx)
 {
 	Buffer *const buffer = buffers[buffer_id];
 
@@ -208,6 +210,48 @@ buffer_get_byte_idx_of_utf8_idx(const BufferID buffer_id, size_t char_idx)
 	__builtin_unreachable();
 }
 
+size_t
+buffer_get_byte_idx_of_utf8_idx(const BufferID buffer_id, size_t char_idx)
+{
+	Buffer *const buffer = buffers[buffer_id];
+
+	size_t current_char_idx = 0;
+
+	size_t byte_idx;
+	for (byte_idx = 0; byte_idx < buffer->gap_start; byte_idx++) {
+		if (!utf8_is_continuation_byte(*(buffer->text + byte_idx))) {
+			if (current_char_idx == char_idx) {
+				return byte_idx;
+			}
+
+			current_char_idx++;
+		}
+	}
+
+	const size_t max_text_bytes_length =
+		BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size);
+
+	for (byte_idx = buffer->gap_end; byte_idx < max_text_bytes_length;
+	     byte_idx++) {
+		if (!utf8_is_continuation_byte(*(buffer->text + byte_idx))) {
+			if (current_char_idx == char_idx) {
+				return byte_idx;
+			}
+
+			current_char_idx++;
+		}
+	}
+
+	if (current_char_idx == char_idx) {
+		return byte_idx;
+	}
+
+	ASSERT(strcmp("ATTEMPTED TO GET BYTES INDEX OF CHAR OUT OF RANGE OF TEXT",
+		      ".") == 0);
+
+	__builtin_unreachable();
+}
+
 void
 buffer_insert_ascii_char(const BufferID buffer_id, const char c)
 {
@@ -237,10 +281,26 @@ buffer_insert_utf8(const BufferID buffer_id, const char *c)
 }
 
 void
-buffer_delete_char(const BufferID buffer_id)
+buffer_delete_ascii_char(const BufferID buffer_id)
 {
-	if (buffers[buffer_id]->gap_start != 0) {
-		buffers[buffer_id]->gap_start--;
+	Buffer *const buffer = buffers[buffer_id];
+
+	if (buffer->gap_start != 0) {
+		buffer->gap_start--;
+	}
+}
+
+void
+buffer_delete_utf8_char(BufferID buffer_id)
+{
+	Buffer *const buffer = buffers[buffer_id];
+
+	if (buffer->gap_start != 0) {
+		buffer->gap_start--;
+		while (utf8_is_continuation_byte(
+			*(buffer->text + buffer->gap_start))) {
+			buffer->gap_start--;
+		}
 	}
 }
 

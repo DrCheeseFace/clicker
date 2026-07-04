@@ -2,6 +2,11 @@
 #include <string.h>
 
 internal void render_debug_draw_snack(struct clk_Renderer renderer);
+internal void render_text_buffer(struct clk_Renderer *renderer,
+				 struct clk_EditorState state);
+/* internal void render_text_buffer_string_at_cursor(struct clk_Renderer renderer, */
+/* 						  struct clk_EditorState state, */
+/* 						  char *p, size_t p_len); */
 
 void
 render_init(struct clk_Renderer *renderer, int window_x, int window_y,
@@ -37,9 +42,57 @@ render_frame(struct clk_Renderer *renderer, struct clk_EditorState *const state)
 		render_debug_draw_snack(*renderer);
 	}
 
+	render_text_buffer(renderer, *state);
+
 	text_flush(renderer->clk_text);
 	window_flush_display(renderer->clk_window);
 }
+
+// @TODO impl
+internal void
+render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
+{
+	// @TODO move this to editorstate
+	const float font_size = 12.0f;
+	text_push_attr(renderer->clk_text);
+
+	text_set_font_size(renderer->clk_text, font_size);
+	text_set_font_color(renderer->clk_text, 1, 1, 1);
+	text_update_font_extents(&renderer->clk_text);
+
+	ignore renderer;
+	ignore state;
+
+	Bool within_buffer_view = FALSE;
+
+	size_t start_byte_index = buffer_get_byte_idx_of_utf8_idx(
+		state.current_buffer.buffer, state.current_buffer.view_start);
+
+	/* size_t end_byte_index = */
+	/* 	buffer_get_byte_idx_of_utf8_idx(state.current_buffer.buffer, */
+	/* 	state.current_buffer.view_end); */
+
+	/* ignore end_byte_index; */
+	/* ignore start_byte_index; */
+	ignore within_buffer_view;
+
+	/* if (end_byte_index) */
+
+	text_pop_attr(renderer->clk_text);
+}
+
+// @TODO impl
+/* internal void */
+/* render_text_buffer_string_at_cursor(struct clk_Renderer renderer, */
+/* 				    struct clk_EditorState state, char *p, */
+/* 				    size_t p_len) */
+/* { */
+/* 	ignore renderer; */
+/* 	ignore state; */
+
+/* 	ignore p; */
+/* 	ignore p_len; */
+/* } */
 
 internal void
 render_debug_draw_snack(struct clk_Renderer renderer)
@@ -48,10 +101,10 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 
 	char debug_event_snack_text[128];
 	sprintf(debug_event_snack_text,
-		"eventtype: %d \nkeycode: %d \nutf8: %s \nmouse_x: %d \nmouse_y: %d \ntext_len: %d",
+		"eventtype: %d \nkeycode: %d \nutf8: %s \nutf8_hex: 0x%.8x \nmouse_x: %d \nmouse_y: %d \ntext_len: %d",
 		clicker_event.type, clicker_event.val.key.keycode,
-		clicker_event.val.key.utf8, clicker_event.val.mouse.x,
-		clicker_event.val.mouse.y,
+		clicker_event.val.key.utf8, *clicker_event.val.key.utf8,
+		clicker_event.val.mouse.x, clicker_event.val.mouse.y,
 		(uint16_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
 			   (buffers[0]->gap_end - buffers[0]->gap_start)));
 

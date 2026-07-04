@@ -34,6 +34,8 @@ void log_version(void);
 Err process_arg(char *arg);
 Bool utf8_is_continuation_byte(char byte);
 
+#define UTF8_BACKSPACE 0x08
+
 //
 // BUFFER
 //
@@ -79,6 +81,10 @@ void buffer_move_gap_to_utf8_idx(const BufferID buffer_id,
 void buffer_move_gap(BufferID buffer_id, size_t gap_start);
 
 // byte index of utf8 char excluding buffer gap
+size_t buffer_get_logical_byte_idx_of_utf8_idx(const BufferID buffer_id,
+					       size_t char_idx);
+
+// byte index of utf8 char including buffer gap
 size_t buffer_get_byte_idx_of_utf8_idx(const BufferID buffer_id,
 				       size_t char_idx);
 
@@ -90,7 +96,9 @@ void buffer_insert_utf8(const BufferID buffer_id, const char *c);
 
 void buffer_expand_gap_by_page(BufferID buffer_id);
 
-void buffer_delete_char(BufferID buffer_id);
+void buffer_delete_ascii_char(BufferID buffer_id);
+
+void buffer_delete_utf8_char(BufferID buffer_id);
 
 #define BUFFERS_GET_BUFFER_BY_ID(idx) (buffers[(idx)])
 
@@ -239,8 +247,12 @@ struct clk_EditorState {
 
 	char *err_str;
 
-	// cursor position is buffer->gap_start
-	BufferID current_buffer;
+	struct {
+		BufferID buffer;
+		size_t cursor_position;
+		size_t view_start;
+		size_t view_size;
+	} current_buffer;
 };
 
 void editor_init(struct clk_EditorState *state, const char *filepath);

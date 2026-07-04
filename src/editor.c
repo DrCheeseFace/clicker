@@ -20,6 +20,14 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 
 	state->err_str = NULL;
 
+	// @TODO adjust based on cairo char size etc
+	// 80 x 25 terminal.
+	// 81 to include newline character
+	state->current_buffer.view_start = 0;
+	state->current_buffer.view_size = 81 * 25;
+
+	setlocale(LC_ALL, "");
+
 	buffers_init();
 
 	if (filepath) {
@@ -30,7 +38,8 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 					   filepath);
 		}
 
-		Err err = buffer_create_from_file(file, &state->current_buffer);
+		Err err = buffer_create_from_file(
+			file, &state->current_buffer.buffer);
 		if (err == ERR) {
 			editor_set_err_msg(
 				state, "failed to create buffer from file %s",
@@ -39,14 +48,12 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 
 	} else {
 		Err err = buffer_create_blank(system_page_size,
-					      &state->current_buffer);
+					      &state->current_buffer.buffer);
 		if (err == ERR) {
 			editor_set_err_msg(state,
 					   "failed to create blank buffer");
 		}
 	}
-
-	setlocale(LC_ALL, "");
 }
 
 void
@@ -58,9 +65,14 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 		state->is_running = FALSE;
 	}
 
-	/* if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) { */
-	/* 	buffer_insert_ascii_char(state->current_buffer, event.val.key.utf8); */
-	/* } */
+	if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) {
+		if (*(uint32_t *)event.val.key.utf8 == UTF8_BACKSPACE) {
+			buffer_delete_utf8_char(state->current_buffer.buffer);
+		} else {
+			buffer_insert_utf8(state->current_buffer.buffer,
+					   event.val.key.utf8);
+		}
+	}
 }
 
 void

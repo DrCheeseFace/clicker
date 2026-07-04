@@ -197,6 +197,7 @@ window_flush_display(struct clk_Window window)
 	XFlush(x11_window->main_display);
 }
 
+// @TODO replace with cairo
 void
 window_draw_fill_rectangle(struct clk_Window window, uint16_t x, uint16_t y,
 			   uint16_t w, uint16_t h)
@@ -206,6 +207,7 @@ window_draw_fill_rectangle(struct clk_Window window, uint16_t x, uint16_t y,
 		       x11_window->context, x, y, w, h);
 }
 
+// @TODO replace with cairo
 void
 window_draw_line(struct clk_Window window, uint16_t x1, uint16_t y1,
 		 uint16_t x2, uint16_t y2)
