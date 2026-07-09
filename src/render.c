@@ -4,9 +4,6 @@
 internal void render_debug_draw_snack(struct clk_Renderer renderer);
 internal void render_text_buffer(struct clk_Renderer *renderer,
 				 struct clk_EditorState state);
-/* internal void render_text_buffer_string_at_cursor(struct clk_Renderer renderer, */
-/* 						  struct clk_EditorState state, */
-/* 						  char *p, size_t p_len); */
 
 void
 render_init(struct clk_Renderer *renderer, int window_x, int window_y,
@@ -49,50 +46,84 @@ render_frame(struct clk_Renderer *renderer, struct clk_EditorState *const state)
 }
 
 // @TODO impl
+// @TODO renderere pointer?
 internal void
 render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 {
 	// @TODO move this to editorstate
-	const float font_size = 12.0f;
+	const float font_size = 40.0f;
 	text_push_attr(renderer->clk_text);
 
+	// @TODO calculate based on size of window
 	text_set_font_size(renderer->clk_text, font_size);
 	text_set_font_color(renderer->clk_text, 1, 1, 1);
 	text_update_font_extents(&renderer->clk_text);
+	text_move_cursor_to(renderer->clk_text, 200.0,
+			    200.0 + renderer->clk_text.current_font_ascent);
 
-	ignore renderer;
-	ignore state;
+	cairo_text_extents_t extents;
+	size_t horizontal_offset = state.current_buffer.view_start_column;
 
-	Bool within_buffer_view = FALSE;
+	char *start_p =
+		buffer_get_ptr_of_line(state.current_buffer.buffer,
+				       state.current_buffer.view_start_row);
 
-	size_t start_byte_index = buffer_get_byte_idx_of_utf8_idx(
-		state.current_buffer.buffer, state.current_buffer.view_start);
+	char *end_p = buffer_get_ptr_of_line(state.current_buffer.buffer,
+					     state.current_buffer.view_end_row);
 
-	/* size_t end_byte_index = */
-	/* 	buffer_get_byte_idx_of_utf8_idx(state.current_buffer.buffer, */
-	/* 	state.current_buffer.view_end); */
+	char *ptr = start_p;
 
-	/* ignore end_byte_index; */
-	/* ignore start_byte_index; */
-	ignore within_buffer_view;
+	Buffer *const buffer = buffers[state.current_buffer.buffer];
 
-	/* if (end_byte_index) */
+	while (start_p < end_p) {
+		if (ptr == buffer->text + buffer->gap_start) {
+			// display to screen but dont make a newline
+			*(buffer->text + buffer->gap_start) = '\0';
+
+			text_write_text(renderer->clk_text, start_p, &extents);
+
+			start_p = buffer->text + buffer->gap_end;
+			ptr = start_p;
+
+			continue;
+		}
+
+		if (*ptr == '\r' || *ptr == '\n') {
+			// render step
+			char orig_char = *ptr;
+			*ptr = '\0';
+
+			if (strlen(start_p) != 0) {
+				text_write_text(renderer->clk_text, start_p,
+						&extents);
+
+				text_relative_move_cursor_to(
+					renderer->clk_text, -extents.x_advance,
+					renderer->clk_text.current_font_height);
+			} else {
+				text_relative_move_cursor_to(
+					renderer->clk_text, 0,
+					renderer->clk_text.current_font_height);
+			}
+
+			*ptr = '\r';
+
+			// seek to past newline
+			// if past newline into gap, seek to end of gap
+			start_p = ptr + 1;
+			if (start_p == buffer->text + buffer->gap_start) {
+				start_p = buffer->text + buffer->gap_end;
+			}
+			ptr = start_p;
+
+			continue;
+		}
+
+		utf8_seek_next(&ptr);
+	}
 
 	text_pop_attr(renderer->clk_text);
 }
-
-// @TODO impl
-/* internal void */
-/* render_text_buffer_string_at_cursor(struct clk_Renderer renderer, */
-/* 				    struct clk_EditorState state, char *p, */
-/* 				    size_t p_len) */
-/* { */
-/* 	ignore renderer; */
-/* 	ignore state; */
-
-/* 	ignore p; */
-/* 	ignore p_len; */
-/* } */
 
 internal void
 render_debug_draw_snack(struct clk_Renderer renderer)
@@ -101,7 +132,13 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 
 	char debug_event_snack_text[128];
 	sprintf(debug_event_snack_text,
-		"eventtype: %d \nkeycode: %d \nutf8: %s \nutf8_hex: 0x%.8x \nmouse_x: %d \nmouse_y: %d \ntext_len: %d",
+		"eventtype: %d \n"
+		"keycode: %d \n"
+		"utf8: %s \n"
+		"utf8_hex: 0x%.8x \n"
+		"mouse_x: %d \n"
+		"mouse_y: %d \n"
+		"text_len: %d",
 		clicker_event.type, clicker_event.val.key.keycode,
 		clicker_event.val.key.utf8, *clicker_event.val.key.utf8,
 		clicker_event.val.mouse.x, clicker_event.val.mouse.y,

@@ -335,3 +335,37 @@ buffer_expand_gap_by_page(const BufferID buffer_id)
 
 	munmap(old_buffer, old_buffer->size);
 }
+
+void *
+buffer_get_ptr_of_line(BufferID buffer_id, size_t row)
+{
+	// @TODO.
+	// handle utf-8 possibly some part of utf-8 similar to newline
+	Buffer *const buffer = buffers[buffer_id];
+
+	// find first char that isnt a in buffer gap
+	char *p = buffer->text;
+	if (buffer->gap_start == 0) {
+		p = buffer->text + buffer->gap_end;
+	}
+
+	size_t current_line = 0;
+
+	size_t max_text_bytes = BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size);
+
+	while (current_line != row && p < buffer->text + max_text_bytes) {
+		if (*p == '\n') {
+			current_line++;
+		}
+
+		p++;
+
+		// skip past buffer gap
+		// @TODO this is hacky. i think two seperate loops for each region is better
+		if (p == buffer->text + buffer->gap_start) {
+			p = buffer->text + buffer->gap_end;
+		}
+	}
+
+	return p;
+}

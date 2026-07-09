@@ -33,6 +33,7 @@ void log_help(void);
 void log_version(void);
 Err process_arg(char *arg);
 Bool utf8_is_continuation_byte(char byte);
+void utf8_seek_next(char **ptr);
 
 #define UTF8_BACKSPACE 0x08
 
@@ -99,6 +100,9 @@ void buffer_expand_gap_by_page(BufferID buffer_id);
 void buffer_delete_ascii_char(BufferID buffer_id);
 
 void buffer_delete_utf8_char(BufferID buffer_id);
+
+// zero indexed row
+void *buffer_get_ptr_of_line(BufferID buffer_id, size_t row);
 
 #define BUFFERS_GET_BUFFER_BY_ID(idx) (buffers[(idx)])
 
@@ -249,9 +253,10 @@ struct clk_EditorState {
 
 	struct {
 		BufferID buffer;
-		size_t cursor_position;
-		size_t view_start;
-		size_t view_size;
+		size_t cursor_position; // index into each utf-8 character
+		size_t view_start_row;
+		size_t view_end_row;
+		size_t view_start_column;
 	} current_buffer;
 };
 

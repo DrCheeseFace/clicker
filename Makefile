@@ -94,9 +94,9 @@ test: tags $(TARGET_TEST)
 run: $(TARGET_MAIN)
 	./$(TARGET_MAIN)
 
-build-debug: tags $(TARGET_MAIN) $(TARGET_SPACERS)
+build-debug: $(TARGET_MAIN) $(TARGET_SPACERS)
 
-build-test-debug: tags $(TARGET_TEST) $(TARGET_SPACERS)
+build-test-debug: $(TARGET_TEST) $(TARGET_SPACERS)
 
 debug: build-debug
 	./$(TARGET_MAIN)
@@ -107,13 +107,6 @@ test-debug: build-test-debug
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -f TAGS
-
-tags:
-	rm -f TAGS
-	find /usr/include/X11 -type f | xargs etags -a --kinds-c=+p
-	find /usr/include/cairo -type f | xargs etags -a --kinds-c=+p
-	git ls-files | xargs etags -a --kinds-C=+p
-
 
 spacers: $(TARGET_SPACERS)
 

@@ -70,3 +70,13 @@ utf8_is_continuation_byte(char byte)
 	/* 0xC0 = 0b11000000  mask*/
 	return ((uint8_t)byte & 0xC0) == 0x80;
 }
+
+void
+utf8_seek_next(char **ptr)
+{
+	(*ptr)++;
+
+	while (utf8_is_continuation_byte(**ptr)) {
+		(*ptr)++;
+	}
+}

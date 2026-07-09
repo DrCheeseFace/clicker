@@ -22,9 +22,9 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 
 	// @TODO adjust based on cairo char size etc
 	// 80 x 25 terminal.
-	// 81 to include newline character
-	state->current_buffer.view_start = 0;
-	state->current_buffer.view_size = 81 * 25;
+	state->current_buffer.view_start_row = 0;
+	state->current_buffer.view_end_row = 80;
+	state->current_buffer.view_start_column = 0;
 
 	setlocale(LC_ALL, "");
 

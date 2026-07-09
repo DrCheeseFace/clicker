@@ -127,6 +127,7 @@ window_pol_event(void)
 			count = 0;
 		}
 
+		// null terminate utf8. (so can tell the byte count later)
 		clicker_event.val.key.utf8[count] = '\0';
 
 		break;
