@@ -32,25 +32,11 @@ text_init(struct clk_Text *clicker_text, struct clk_Window clk_window)
 }
 
 void
-text_update_text_surface_to_window_size(struct clk_Text *clicker_text,
+text_update_text_surface_to_window_size(struct clk_Text clicker_text,
 					struct clk_Window clk_window)
 {
-	struct x11_Window *x11_window = clk_window.window_ctx;
-
-	cairo_destroy(clicker_text->cairo_ctx);
-	cairo_surface_destroy(clicker_text->cairo_surface);
-
-	clicker_text->cairo_surface = cairo_xlib_surface_create(
-		x11_window->main_display, x11_window->main_window,
-		DefaultVisual(x11_window->main_display,
-			      DefaultScreen(x11_window->main_display)),
-		clk_window.window_w, clk_window.window_h);
-
-	clicker_text->cairo_ctx = cairo_create(clicker_text->cairo_surface);
-
-	cairo_select_font_face(clicker_text->cairo_ctx, DEFAULT_FONT,
-			       CAIRO_FONT_SLANT_NORMAL,
-			       CAIRO_FONT_WEIGHT_NORMAL);
+	cairo_xlib_surface_set_size(clicker_text.cairo_surface,
+				    clk_window.window_w, clk_window.window_h);
 }
 
 void

@@ -354,14 +354,14 @@ buffer_get_ptr_of_line(BufferID buffer_id, size_t row)
 	size_t max_text_bytes = BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size);
 
 	while (current_line != row && p < buffer->text + max_text_bytes) {
-		if (*p == '\n') {
+		if (*p == UTF8_RETURN || *p == UTF8_NEWLINE) {
 			current_line++;
 		}
 
 		p++;
 
-		// skip past buffer gap
 		// @TODO this is hacky. i think two seperate loops for each region is better
+		// skip past buffer gap
 		if (p == buffer->text + buffer->gap_start) {
 			p = buffer->text + buffer->gap_end;
 		}

@@ -36,6 +36,10 @@ Bool utf8_is_continuation_byte(char byte);
 void utf8_seek_next(char **ptr);
 
 #define UTF8_BACKSPACE 0x08
+// @TODO make this hex?
+#define UTF8_FULL_BLOCK "█"
+#define UTF8_RETURN '\n'
+#define UTF8_NEWLINE '\r'
 
 //
 // BUFFER
@@ -196,7 +200,7 @@ void text_init(struct clk_Text *clicker_text, struct clk_Window clk_window);
 
 void text_free(struct clk_Text clicker_text);
 
-void text_update_text_surface_to_window_size(struct clk_Text *clicker_text,
+void text_update_text_surface_to_window_size(struct clk_Text clicker_text,
 					     struct clk_Window clk_window);
 
 void text_push_attr(struct clk_Text clicker_text);
@@ -253,10 +257,15 @@ struct clk_EditorState {
 
 	struct {
 		BufferID buffer;
+
+		float font_size;
+		float frame_origin_x;
+		float frame_origin_y;
+
 		size_t cursor_position; // index into each utf-8 character
 		size_t view_start_row;
-		size_t view_end_row;
 		size_t view_start_column;
+
 	} current_buffer;
 };
 

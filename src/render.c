@@ -29,7 +29,7 @@ render_frame(struct clk_Renderer *renderer, struct clk_EditorState *const state)
 
 	if (state->resize_required) {
 		window_update_window_size(&renderer->clk_window);
-		text_update_text_surface_to_window_size(&renderer->clk_text,
+		text_update_text_surface_to_window_size(renderer->clk_text,
 							renderer->clk_window);
 
 		state->resize_required = FALSE;
@@ -45,31 +45,57 @@ render_frame(struct clk_Renderer *renderer, struct clk_EditorState *const state)
 	window_flush_display(renderer->clk_window);
 }
 
-// @TODO impl
-// @TODO renderere pointer?
 internal void
 render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 {
-	// @TODO move this to editorstate
-	const float font_size = 40.0f;
+	const float font_size = state.current_buffer.font_size;
 	text_push_attr(renderer->clk_text);
 
-	// @TODO calculate based on size of window
+	// clip box for text
+	cairo_rectangle(renderer->clk_text.cairo_ctx,
+			state.current_buffer.frame_origin_x,
+			state.current_buffer.frame_origin_y,
+			renderer->clk_window.window_w -
+				(state.current_buffer.frame_origin_x * 2),
+			renderer->clk_window.window_h -
+				(state.current_buffer.frame_origin_y * 2));
+	cairo_clip(renderer->clk_text.cairo_ctx);
+
 	text_set_font_size(renderer->clk_text, font_size);
 	text_set_font_color(renderer->clk_text, 1, 1, 1);
 	text_update_font_extents(&renderer->clk_text);
-	text_move_cursor_to(renderer->clk_text, 200.0,
-			    200.0 + renderer->clk_text.current_font_ascent);
+
+	size_t start_row = state.current_buffer.view_start_row;
+	if (state.current_buffer.view_start_row != 0) {
+		// no + text_height offset to partially render line above view of buffer
+		start_row--;
+		text_move_cursor_to(renderer->clk_text,
+				    state.current_buffer.frame_origin_x,
+				    state.current_buffer.frame_origin_y);
+	} else {
+		text_move_cursor_to(
+			renderer->clk_text, state.current_buffer.frame_origin_x,
+			state.current_buffer.frame_origin_y +
+				renderer->clk_text.current_font_ascent);
+	}
 
 	cairo_text_extents_t extents;
+
+	// @TODO impl this when moving view with cursor
 	size_t horizontal_offset = state.current_buffer.view_start_column;
+	ignore horizontal_offset;
 
 	char *start_p =
-		buffer_get_ptr_of_line(state.current_buffer.buffer,
-				       state.current_buffer.view_start_row);
+		buffer_get_ptr_of_line(state.current_buffer.buffer, start_row);
+
+	// +1 so we can partially see the cutoff line at the bottom
+	const size_t view_height = ((renderer->clk_window.window_h -
+				     state.current_buffer.frame_origin_y) /
+				    renderer->clk_text.current_font_height) +
+				   1;
 
 	char *end_p = buffer_get_ptr_of_line(state.current_buffer.buffer,
-					     state.current_buffer.view_end_row);
+					     start_row + view_height);
 
 	char *ptr = start_p;
 
@@ -88,8 +114,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 			continue;
 		}
 
-		if (*ptr == '\r' || *ptr == '\n') {
-			// render step
+		if (*ptr == UTF8_RETURN || *ptr == UTF8_NEWLINE) {
 			char orig_char = *ptr;
 			*ptr = '\0';
 
@@ -106,7 +131,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 					renderer->clk_text.current_font_height);
 			}
 
-			*ptr = '\r';
+			*ptr = orig_char;
 
 			// seek to past newline
 			// if past newline into gap, seek to end of gap

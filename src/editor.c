@@ -20,10 +20,11 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 
 	state->err_str = NULL;
 
-	// @TODO adjust based on cairo char size etc
-	// 80 x 25 terminal.
+	state->current_buffer.font_size = 40;
+	state->current_buffer.frame_origin_x = 50;
+	state->current_buffer.frame_origin_y = 50;
+
 	state->current_buffer.view_start_row = 0;
-	state->current_buffer.view_end_row = 80;
 	state->current_buffer.view_start_column = 0;
 
 	setlocale(LC_ALL, "");
