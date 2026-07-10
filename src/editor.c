@@ -24,6 +24,8 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 	state->current_buffer.frame_origin_x = 50;
 	state->current_buffer.frame_origin_y = 50;
 
+	state->current_buffer.cursor_position = 1;
+
 	state->current_buffer.view_start_row = 0;
 	state->current_buffer.view_start_column = 0;
 

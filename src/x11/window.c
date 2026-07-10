@@ -114,6 +114,9 @@ window_pol_event(void)
 	case KeyPress: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN;
 		clicker_event.val.key.keycode = GeneralEvent.xkey.keycode;
+		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
+		if (clicker_event.ctrl_down)
+			break;
 
 		KeySym keysym = NoSymbol;
 
@@ -136,6 +139,7 @@ window_pol_event(void)
 	case KeyRelease: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYUP;
 		clicker_event.val.key.keycode = GeneralEvent.xkey.keycode;
+		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
 		clicker_event.val.key.utf8[0] = '\0';
 		break;
 	}
@@ -145,6 +149,7 @@ window_pol_event(void)
 		clicker_event.val.mouse.x = GeneralEvent.xbutton.x;
 		clicker_event.val.mouse.y = GeneralEvent.xbutton.y;
 		clicker_event.val.mouse.button = GeneralEvent.xbutton.button;
+		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
 		break;
 	}
 
@@ -153,6 +158,7 @@ window_pol_event(void)
 		clicker_event.val.mouse.x = GeneralEvent.xbutton.x;
 		clicker_event.val.mouse.y = GeneralEvent.xbutton.y;
 		clicker_event.val.mouse.button = GeneralEvent.xbutton.button;
+		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
 		break;
 	}
 
@@ -161,6 +167,7 @@ window_pol_event(void)
 		clicker_event.val.mouse.x = GeneralEvent.xmotion.x;
 		clicker_event.val.mouse.y = GeneralEvent.xmotion.y;
 		clicker_event.val.mouse.button = 0;
+		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
 		break;
 	}
 

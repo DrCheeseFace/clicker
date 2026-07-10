@@ -108,6 +108,9 @@ void buffer_delete_utf8_char(BufferID buffer_id);
 // zero indexed row
 void *buffer_get_ptr_of_line(BufferID buffer_id, size_t row);
 
+void buffer_get_row_col_of_utf8(BufferID buffer_id, size_t char_idx,
+				size_t *col, size_t *row);
+
 #define BUFFERS_GET_BUFFER_BY_ID(idx) (buffers[(idx)])
 
 //
@@ -145,6 +148,8 @@ enum clk_EventMouse {
 
 struct clk_Event {
 	enum clk_EventType type;
+	// @TODO fuck this bool. fix me lol
+	Bool ctrl_down; // i have sinned...
 
 	union {
 		struct {
@@ -183,9 +188,9 @@ void window_draw_line(struct clk_Window window, uint16_t x1, uint16_t y1,
 		      uint16_t x2, uint16_t y2);
 
 //
-// TEXT
+// DRAW
 //
-struct clk_Text {
+struct clk_Draw {
 	cairo_t *cairo_ctx;
 	cairo_surface_t *cairo_surface;
 
@@ -196,33 +201,37 @@ struct clk_Text {
 	double current_font_max_y_advance;
 };
 
-void text_init(struct clk_Text *clicker_text, struct clk_Window clk_window);
+void draw_init(struct clk_Draw *clicker_draw, struct clk_Window clk_window);
 
-void text_free(struct clk_Text clicker_text);
+void draw_free(struct clk_Draw clicker_draw);
 
-void text_update_text_surface_to_window_size(struct clk_Text clicker_text,
+void draw_update_text_surface_to_window_size(struct clk_Draw clicker_draw,
 					     struct clk_Window clk_window);
 
-void text_push_attr(struct clk_Text clicker_text);
+void draw_push_attr(struct clk_Draw clicker_draw);
 
-void text_pop_attr(struct clk_Text clicker_text);
+void draw_pop_attr(struct clk_Draw clicker_draw);
 
-void text_set_font_size(struct clk_Text clicker_text, double size);
+void draw_set_font_size(struct clk_Draw clicker_draw, double size);
 
-void text_set_font_color(struct clk_Text clicker_text, double r, double g,
+void draw_set_font_color(struct clk_Draw clicker_draw, double r, double g,
 			 double b);
 
-void text_move_cursor_to(struct clk_Text clicker_text, double x, double y);
+void draw_move_cursor_to(struct clk_Draw clicker_draw, double x, double y);
 
-void text_relative_move_cursor_to(struct clk_Text clicker_text, double x,
+void draw_relative_move_cursor_to(struct clk_Draw clicker_draw, double x,
 				  double y);
 
-void text_update_font_extents(struct clk_Text *clicker_text);
+void draw_update_font_extents(struct clk_Draw *clicker_draw);
 
-void text_write_text(struct clk_Text clicker_text, const char *text,
+void draw_write_text(struct clk_Draw clicker_draw, const char *text,
 		     cairo_text_extents_t *text_extents);
 
-void text_flush(struct clk_Text clicker_text);
+void draw_flush(struct clk_Draw clicker_draw);
+
+void draw_fill_rectangle(struct clk_Draw clicker_draw, uint16_t x, uint16_t y,
+			 uint16_t w, uint16_t h, float r, float g, float b,
+			 cairo_operator_t operator);
 
 //
 // RENDER
@@ -230,7 +239,7 @@ void text_flush(struct clk_Text clicker_text);
 
 struct clk_Renderer {
 	struct clk_Window clk_window;
-	struct clk_Text clk_text;
+	struct clk_Draw clk_draw;
 };
 
 extern struct clk_Renderer clicker_renderer;
@@ -262,7 +271,8 @@ struct clk_EditorState {
 		float frame_origin_x;
 		float frame_origin_y;
 
-		size_t cursor_position; // index into each utf-8 character
+		size_t cursor_position;
+
 		size_t view_start_row;
 		size_t view_start_column;
 

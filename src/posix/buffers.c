@@ -369,3 +369,39 @@ buffer_get_ptr_of_line(BufferID buffer_id, size_t row)
 
 	return p;
 }
+
+void
+buffer_get_row_col_of_utf8(BufferID buffer_id, size_t char_idx, size_t *x,
+			   size_t *y)
+{
+	Buffer *const buffer = buffers[buffer_id];
+
+	char *p = buffer->text;
+	if (buffer->gap_start == 0) {
+		p = buffer->text + buffer->gap_end;
+	}
+
+	*y = 0;
+	*x = 0;
+	size_t current_character_idx = 0;
+
+	size_t max_text_bytes = BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size);
+
+	while (current_character_idx < char_idx &&
+	       p < buffer->text + max_text_bytes) {
+		if (*p == UTF8_RETURN || *p == UTF8_NEWLINE) {
+			(*y)++;
+			*x = 0;
+		} else {
+			(*x) += 1;
+		}
+
+		if (p + 1 == buffer->text + buffer->gap_start) {
+			p = buffer->text + buffer->gap_end;
+		} else {
+			utf8_seek_next(&p);
+		}
+
+		current_character_idx++;
+	}
+}

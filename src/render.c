@@ -4,6 +4,8 @@
 internal void render_debug_draw_snack(struct clk_Renderer renderer);
 internal void render_text_buffer(struct clk_Renderer *renderer,
 				 struct clk_EditorState state);
+internal void render_text_buffer_cursor(struct clk_Draw clk_draw,
+					struct clk_EditorState state);
 
 void
 render_init(struct clk_Renderer *renderer, int window_x, int window_y,
@@ -12,13 +14,13 @@ render_init(struct clk_Renderer *renderer, int window_x, int window_y,
 	window_init(&(renderer->clk_window), window_x, window_y, window_w,
 		    window_h, border_w);
 
-	text_init(&(renderer->clk_text), renderer->clk_window);
+	draw_init(&(renderer->clk_draw), renderer->clk_window);
 }
 
 void
 render_free(struct clk_Renderer *renderer)
 {
-	text_free(renderer->clk_text);
+	draw_free(renderer->clk_draw);
 	window_free(renderer->clk_window);
 }
 
@@ -29,7 +31,7 @@ render_frame(struct clk_Renderer *renderer, struct clk_EditorState *const state)
 
 	if (state->resize_required) {
 		window_update_window_size(&renderer->clk_window);
-		text_update_text_surface_to_window_size(renderer->clk_text,
+		draw_update_text_surface_to_window_size(renderer->clk_draw,
 							renderer->clk_window);
 
 		state->resize_required = FALSE;
@@ -41,7 +43,7 @@ render_frame(struct clk_Renderer *renderer, struct clk_EditorState *const state)
 
 	render_text_buffer(renderer, *state);
 
-	text_flush(renderer->clk_text);
+	draw_flush(renderer->clk_draw);
 	window_flush_display(renderer->clk_window);
 }
 
@@ -49,34 +51,35 @@ internal void
 render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 {
 	const float font_size = state.current_buffer.font_size;
-	text_push_attr(renderer->clk_text);
+	draw_push_attr(renderer->clk_draw);
 
 	// clip box for text
-	cairo_rectangle(renderer->clk_text.cairo_ctx,
+	cairo_rectangle(renderer->clk_draw.cairo_ctx,
 			state.current_buffer.frame_origin_x,
 			state.current_buffer.frame_origin_y,
 			renderer->clk_window.window_w -
 				(state.current_buffer.frame_origin_x * 2),
 			renderer->clk_window.window_h -
 				(state.current_buffer.frame_origin_y * 2));
-	cairo_clip(renderer->clk_text.cairo_ctx);
 
-	text_set_font_size(renderer->clk_text, font_size);
-	text_set_font_color(renderer->clk_text, 1, 1, 1);
-	text_update_font_extents(&renderer->clk_text);
+	cairo_clip(renderer->clk_draw.cairo_ctx); // fuck u lol bruh yuy
+
+	draw_set_font_size(renderer->clk_draw, font_size);
+	draw_set_font_color(renderer->clk_draw, 1, 1, 1);
+	draw_update_font_extents(&renderer->clk_draw);
 
 	size_t start_row = state.current_buffer.view_start_row;
 	if (state.current_buffer.view_start_row != 0) {
 		// no + text_height offset to partially render line above view of buffer
 		start_row--;
-		text_move_cursor_to(renderer->clk_text,
+		draw_move_cursor_to(renderer->clk_draw,
 				    state.current_buffer.frame_origin_x,
 				    state.current_buffer.frame_origin_y);
 	} else {
-		text_move_cursor_to(
-			renderer->clk_text, state.current_buffer.frame_origin_x,
+		draw_move_cursor_to(
+			renderer->clk_draw, state.current_buffer.frame_origin_x,
 			state.current_buffer.frame_origin_y +
-				renderer->clk_text.current_font_ascent);
+				renderer->clk_draw.current_font_ascent);
 	}
 
 	cairo_text_extents_t extents;
@@ -91,7 +94,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 	// +1 so we can partially see the cutoff line at the bottom
 	const size_t view_height = ((renderer->clk_window.window_h -
 				     state.current_buffer.frame_origin_y) /
-				    renderer->clk_text.current_font_height) +
+				    renderer->clk_draw.current_font_height) +
 				   1;
 
 	char *end_p = buffer_get_ptr_of_line(state.current_buffer.buffer,
@@ -106,7 +109,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 			// display to screen but dont make a newline
 			*(buffer->text + buffer->gap_start) = '\0';
 
-			text_write_text(renderer->clk_text, start_p, &extents);
+			draw_write_text(renderer->clk_draw, start_p, &extents);
 
 			start_p = buffer->text + buffer->gap_end;
 			ptr = start_p;
@@ -119,16 +122,16 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 			*ptr = '\0';
 
 			if (strlen(start_p) != 0) {
-				text_write_text(renderer->clk_text, start_p,
+				draw_write_text(renderer->clk_draw, start_p,
 						&extents);
 
-				text_relative_move_cursor_to(
-					renderer->clk_text, -extents.x_advance,
-					renderer->clk_text.current_font_height);
+				draw_relative_move_cursor_to(
+					renderer->clk_draw, -extents.x_advance,
+					renderer->clk_draw.current_font_height);
 			} else {
-				text_relative_move_cursor_to(
-					renderer->clk_text, 0,
-					renderer->clk_text.current_font_height);
+				draw_relative_move_cursor_to(
+					renderer->clk_draw, 0,
+					renderer->clk_draw.current_font_height);
 			}
 
 			*ptr = orig_char;
@@ -147,13 +150,41 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 		utf8_seek_next(&ptr);
 	}
 
-	text_pop_attr(renderer->clk_text);
+	draw_pop_attr(renderer->clk_draw);
+	render_text_buffer_cursor(renderer->clk_draw, state);
+}
+
+// @TODO some static stuff to get blinking working
+internal void
+render_text_buffer_cursor(struct clk_Draw clk_draw,
+			  struct clk_EditorState state)
+{
+	size_t absolute_row;
+	size_t absolute_col;
+	buffer_get_row_col_of_utf8(state.current_buffer.buffer,
+				   state.current_buffer.cursor_position,
+				   &absolute_col, &absolute_row);
+
+	const size_t relative_row =
+		absolute_row - state.current_buffer.view_start_row;
+	const size_t relative_col = absolute_col;
+
+	size_t origin_y = state.current_buffer.frame_origin_y +
+			  (relative_row * clk_draw.current_font_height);
+	size_t origin_x = state.current_buffer.frame_origin_x +
+			  (relative_col * clk_draw.current_font_max_x_advance);
+
+	draw_fill_rectangle(clk_draw, origin_x, origin_y,
+	clk_draw.current_font_max_x_advance,
+			    clk_draw.current_font_height,
+			    1, 1, 1,
+			    CAIRO_OPERATOR_DIFFERENCE);
 }
 
 internal void
 render_debug_draw_snack(struct clk_Renderer renderer)
 {
-	text_push_attr(renderer.clk_text);
+	draw_push_attr(renderer.clk_draw);
 
 	char debug_event_snack_text[128];
 	sprintf(debug_event_snack_text,
@@ -161,21 +192,23 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		"keycode: %d \n"
 		"utf8: %s \n"
 		"utf8_hex: 0x%.8x \n"
+		"ctrl_down: %d \n"
 		"mouse_x: %d \n"
 		"mouse_y: %d \n"
-		"text_len: %d",
+		"text_len: %zu",
 		clicker_event.type, clicker_event.val.key.keycode,
 		clicker_event.val.key.utf8, *clicker_event.val.key.utf8,
-		clicker_event.val.mouse.x, clicker_event.val.mouse.y,
-		(uint16_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
-			   (buffers[0]->gap_end - buffers[0]->gap_start)));
+		clicker_event.ctrl_down, clicker_event.val.mouse.x,
+		clicker_event.val.mouse.y,
+		(size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
+			 (buffers[0]->gap_end - buffers[0]->gap_start)));
 
-	text_set_font_size(renderer.clk_text, 20.0f);
-	text_set_font_color(renderer.clk_text, 1, 1, 1);
-	text_update_font_extents(&renderer.clk_text);
+	draw_set_font_size(renderer.clk_draw, 20.0f);
+	draw_set_font_color(renderer.clk_draw, 1, 1, 1);
+	draw_update_font_extents(&renderer.clk_draw);
 
-	text_move_cursor_to(renderer.clk_text, 10.0,
-			    10.0 + renderer.clk_text.current_font_ascent);
+	draw_move_cursor_to(renderer.clk_draw, 10.0,
+			    10.0 + renderer.clk_draw.current_font_ascent);
 
 	const char *p = debug_event_snack_text;
 	const char *newline_loc;
@@ -188,20 +221,20 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		memcpy(text_buffer, p, len);
 		text_buffer[len] = '\0';
 
-		text_write_text(renderer.clk_text, text_buffer, &extents);
+		draw_write_text(renderer.clk_draw, text_buffer, &extents);
 
-		text_relative_move_cursor_to(
-			renderer.clk_text, -extents.x_advance,
-			renderer.clk_text.current_font_height);
+		draw_relative_move_cursor_to(
+			renderer.clk_draw, -extents.x_advance,
+			renderer.clk_draw.current_font_height);
 
 		p = newline_loc + 1;
 	}
 
 	memcpy(text_buffer, p, strlen(p));
 	text_buffer[strlen(p)] = '\0';
-	text_write_text(renderer.clk_text, text_buffer, NULL);
+	draw_write_text(renderer.clk_draw, text_buffer, NULL);
 
-	text_pop_attr(renderer.clk_text);
+	draw_pop_attr(renderer.clk_draw);
 
 	// draw wireframe whole window
 	window_draw_line(renderer.clk_window, 0, 0,
