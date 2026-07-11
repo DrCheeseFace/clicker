@@ -137,6 +137,15 @@ enum clk_EventType {
 	CLK_WINDOW_EVENT_TYPE_RESIZEREQ,
 };
 
+enum clk_Keysym {
+	CLK_KEYSYM_ARROW_UP = 0,
+	CLK_KEYSYM_ARROW_DOWN,
+	CLK_KEYSYM_ARROW_LEFT,
+	CLK_KEYSYM_ARROW_RIGHT,
+	CLK_KEYSYM_COUNT, //@TODO is this sane to do
+	CLK_KEYSYM_NOT_FOUND
+};
+
 enum clk_EventMouse {
 	CLK_WINDOW_EVENT_MOUSE1,
 	CLK_WINDOW_EVENT_MOUSE2,
@@ -159,8 +168,9 @@ struct clk_Event {
 		} mouse;
 
 		struct {
-			uint16_t keycode;
-			char utf8[8];
+			enum clk_Keysym keysym;
+
+			char utf8[8]; // @TODO REMOVE THIS ASS
 		} key;
 
 	} val;

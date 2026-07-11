@@ -5,6 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+const XID x11_keycode_to_clk_keysym_map[CLK_KEYSYM_COUNT] = { XK_Up, XK_Down,
+							      XK_Left,
+							      XK_Right };
+
+mrm_internal enum clk_Keysym
+window_translate_x11_keycode_to_clk_keysym(struct x11_Window *x11_window,
+					   XEvent event);
+
 // @TODO err handling
 void
 window_init(struct clk_Window *window, int window_x, int window_y, int window_w,
@@ -113,7 +121,10 @@ window_pol_event(void)
 	switch (GeneralEvent.type) {
 	case KeyPress: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN;
-		clicker_event.val.key.keycode = GeneralEvent.xkey.keycode;
+		clicker_event.val.key.keysym =
+			window_translate_x11_keycode_to_clk_keysym(
+				x11_window, GeneralEvent);
+
 		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
 		if (clicker_event.ctrl_down)
 			break;
@@ -138,7 +149,9 @@ window_pol_event(void)
 
 	case KeyRelease: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYUP;
-		clicker_event.val.key.keycode = GeneralEvent.xkey.keycode;
+		clicker_event.val.key.keysym =
+			window_translate_x11_keycode_to_clk_keysym(
+				x11_window, GeneralEvent);
 		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
 		clicker_event.val.key.utf8[0] = '\0';
 		break;
@@ -224,4 +237,25 @@ window_draw_line(struct clk_Window window, uint16_t x1, uint16_t y1,
 
 	XDrawLine(x11_window->main_display, x11_window->main_window,
 		  x11_window->context, x1, y1, x2, y2);
+}
+
+mrm_internal enum clk_Keysym
+window_translate_x11_keycode_to_clk_keysym(struct x11_Window *x11_window,
+					   XEvent event)
+{
+	KeySym keysym =
+		XkbKeycodeToKeysym(x11_window->main_display, event.xkey.keycode,
+				   0, event.xkey.state & ShiftMask ? 1 : 0);
+
+	if (keysym == NoSymbol) {
+		return CLK_KEYSYM_NOT_FOUND;
+	}
+
+	for (enum clk_Keysym sym = 0; sym < CLK_KEYSYM_COUNT; sym++) {
+		if (keysym == x11_keycode_to_clk_keysym_map[sym]) {
+			return sym;
+		}
+	}
+
+	return CLK_KEYSYM_NOT_FOUND;
 }

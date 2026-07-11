@@ -1,0 +1,8 @@
+*.out
+.cache
+compile_commands.json
+*.so
+*.o
+*.d
+spacers
+build

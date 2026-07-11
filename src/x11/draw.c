@@ -129,10 +129,10 @@ draw_fill_rectangle(struct clk_Draw clicker_draw, uint16_t x, uint16_t y,
 }
 
 void
-draw_clip_rectangle(struct clk_Draw clicker_draw, double x,
-		    double y, double w, double h)
+draw_clip_rectangle(struct clk_Draw clicker_draw, double x, double y, double w,
+		    double h)
 {
-  cairo_rectangle(clicker_draw.cairo_ctx, x, y, w, h);
-  
-		cairo_clip(clicker_draw.cairo_ctx);
+	cairo_rectangle(clicker_draw.cairo_ctx, x, y, w, h);
+
+	cairo_clip(clicker_draw.cairo_ctx);
 }

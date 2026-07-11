@@ -5,7 +5,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-internal int next_empty_buffer(void);
+mrm_internal int next_empty_buffer(void);
 
 Buffer *buffers[MAX_BUFFERS] = { NULL };
 size_t system_page_size;
@@ -113,7 +113,7 @@ buffer_create_blank(size_t size, BufferID *const new_buffer_id)
 	return OK;
 }
 
-internal int
+mrm_internal int
 next_empty_buffer(void)
 {
 	for (uint8_t i = 0; i < MAX_BUFFERS; i++) {

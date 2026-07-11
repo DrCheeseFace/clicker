@@ -1,11 +1,11 @@
 #include "./internal.h"
 #include <string.h>
 
-internal void render_debug_draw_snack(struct clk_Renderer renderer);
-internal void render_text_buffer(struct clk_Renderer *renderer,
-				 struct clk_EditorState state);
-internal void render_text_buffer_cursor(struct clk_Draw clk_draw,
-					struct clk_EditorState state);
+mrm_internal void render_debug_draw_snack(struct clk_Renderer renderer);
+mrm_internal void render_text_buffer(struct clk_Renderer *renderer,
+				     struct clk_EditorState state);
+mrm_internal void render_text_buffer_cursor(struct clk_Draw clk_draw,
+					    struct clk_EditorState state);
 
 void
 render_init(struct clk_Renderer *renderer, int window_x, int window_y,
@@ -47,19 +47,19 @@ render_frame(struct clk_Renderer *renderer, struct clk_EditorState *const state)
 	window_flush_display(renderer->clk_window);
 }
 
-internal void
+mrm_internal void
 render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 {
 	const float font_size = state.current_buffer.font_size;
 	draw_push_attr(renderer->clk_draw);
 
 	draw_clip_rectangle(renderer->clk_draw,
-			state.current_buffer.frame_origin_x,
-			state.current_buffer.frame_origin_y,
-			renderer->clk_window.window_w -
-				(state.current_buffer.frame_origin_x * 2),
-			renderer->clk_window.window_h -
-				(state.current_buffer.frame_origin_y * 2));
+			    state.current_buffer.frame_origin_x,
+			    state.current_buffer.frame_origin_y,
+			    renderer->clk_window.window_w -
+				    (state.current_buffer.frame_origin_x * 2),
+			    renderer->clk_window.window_h -
+				    (state.current_buffer.frame_origin_y * 2));
 
 	draw_set_font_size(renderer->clk_draw, font_size);
 	draw_set_font_color(renderer->clk_draw, 1, 1, 1);
@@ -152,7 +152,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 }
 
 // @TODO some static stuff to get blinking working
-internal void
+mrm_internal void
 render_text_buffer_cursor(struct clk_Draw clk_draw,
 			  struct clk_EditorState state)
 {
@@ -178,7 +178,7 @@ render_text_buffer_cursor(struct clk_Draw clk_draw,
 			    CAIRO_OPERATOR_DIFFERENCE);
 }
 
-internal void
+mrm_internal void
 render_debug_draw_snack(struct clk_Renderer renderer)
 {
 	draw_push_attr(renderer.clk_draw);
@@ -193,10 +193,10 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		"mouse_x: %d \n"
 		"mouse_y: %d \n"
 		"text_len: %zu",
-		clicker_event.type, clicker_event.val.key.keycode,
-		clicker_event.val.key.utf8, *clicker_event.val.key.utf8,
-		clicker_event.ctrl_down, clicker_event.val.mouse.x,
-		clicker_event.val.mouse.y,
+		clicker_event.type,
+		clicker_event.val.key.keysym, clicker_event.val.key.utf8,
+		*clicker_event.val.key.utf8, clicker_event.ctrl_down,
+		clicker_event.val.mouse.x, clicker_event.val.mouse.y,
 		(size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
 			 (buffers[0]->gap_end - buffers[0]->gap_start)));
 
