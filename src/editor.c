@@ -69,11 +69,11 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 	}
 
 	if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) {
-		if (*(uint32_t *)event.val.key.utf8 == UTF8_BACKSPACE) {
+		if (*(uint32_t *)event.key.utf8 == UTF8_BACKSPACE) {
 			buffer_delete_utf8_char(state->current_buffer.buffer);
 		} else {
 			buffer_insert_utf8(state->current_buffer.buffer,
-					   event.val.key.utf8);
+					   event.key.utf8);
 		}
 	}
 }

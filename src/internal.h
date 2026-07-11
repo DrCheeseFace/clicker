@@ -142,9 +142,13 @@ enum clk_Keysym {
 	CLK_KEYSYM_ARROW_DOWN,
 	CLK_KEYSYM_ARROW_LEFT,
 	CLK_KEYSYM_ARROW_RIGHT,
-	CLK_KEYSYM_COUNT, //@TODO is this sane to do
-	CLK_KEYSYM_NOT_FOUND
+	CLK_KEYSYM_COUNT,
+	CLK_KEYSYM_NOT_FOUND,
+
+	CLK_KEYSYM_COUNT_ //@TODO is this sane to do
 };
+
+extern const char *clk_keysym_to_string[CLK_KEYSYM_COUNT_];
 
 enum clk_EventMouse {
 	CLK_WINDOW_EVENT_MOUSE1,
@@ -157,23 +161,18 @@ enum clk_EventMouse {
 
 struct clk_Event {
 	enum clk_EventType type;
-	// @TODO fuck this bool. fix me lol
-	Bool ctrl_down; // i have sinned...
+	struct {
+		enum clk_EventMouse button;
+		uint16_t x;
+		uint16_t y;
+	} mouse;
 
-	union {
-		struct {
-			enum clk_EventMouse button;
-			uint16_t x;
-			uint16_t y;
-		} mouse;
-
-		struct {
-			enum clk_Keysym keysym;
-
-			char utf8[8]; // @TODO REMOVE THIS ASS
-		} key;
-
-	} val;
+	struct {
+		// @TODO fuck this bool. fix me lol
+		Bool ctrl_down; // i have sinned...
+		char utf8[8]; // @TODO REMOVE THIS ASS
+		enum clk_Keysym keysym;
+	} key;
 };
 
 extern struct clk_Event clicker_event;

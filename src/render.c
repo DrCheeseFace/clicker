@@ -183,22 +183,24 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 {
 	draw_push_attr(renderer.clk_draw);
 
-	char debug_event_snack_text[128];
-	sprintf(debug_event_snack_text,
-		"eventtype: %d \n"
-		"keycode: %d \n"
-		"utf8: %s \n"
-		"utf8_hex: 0x%.8x \n"
-		"ctrl_down: %d \n"
-		"mouse_x: %d \n"
-		"mouse_y: %d \n"
-		"text_len: %zu",
-		clicker_event.type,
-		clicker_event.val.key.keysym, clicker_event.val.key.utf8,
-		*clicker_event.val.key.utf8, clicker_event.ctrl_down,
-		clicker_event.val.mouse.x, clicker_event.val.mouse.y,
-		(size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
-			 (buffers[0]->gap_end - buffers[0]->gap_start)));
+	char debug_event_snack_text[256];
+	snprintf(debug_event_snack_text, sizeof(debug_event_snack_text),
+		 "eventtype: %d \n"
+		 "keysym: %s \n"
+		 "utf8: %s \n"
+		 "utf8_hex: 0x%.2hhx \n"
+		 "ctrl_down: %d \n"
+		 "mouse_x: %d \n"
+		 "mouse_y: %d \n"
+		 "text_len: %zu",
+		 clicker_event.type,
+		 clk_keysym_to_string[clicker_event.key.keysym],
+		 clicker_event.key.utf8,
+		 (unsigned char)clicker_event.key.utf8[0],
+		 clicker_event.key.ctrl_down, clicker_event.mouse.x,
+		 clicker_event.mouse.y,
+		 (size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
+			  (buffers[0]->gap_end - buffers[0]->gap_start)));
 
 	draw_set_font_size(renderer.clk_draw, 20.0f);
 	draw_set_font_color(renderer.clk_draw, 1, 1, 1);
@@ -209,7 +211,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 
 	const char *p = debug_event_snack_text;
 	const char *newline_loc;
-	char text_buffer[64];
+	char text_buffer[256];
 	cairo_text_extents_t extents;
 
 	while ((newline_loc = strchr(p, '\n')) != NULL) {
@@ -229,6 +231,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 
 	memcpy(text_buffer, p, strlen(p));
 	text_buffer[strlen(p)] = '\0';
+
 	draw_write_text(renderer.clk_draw, text_buffer, NULL);
 
 	draw_pop_attr(renderer.clk_draw);

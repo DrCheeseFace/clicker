@@ -4,7 +4,7 @@ CSTANDARD   = c99
 INCLUDES    = -Iinclude -Isrc/mr_utils/include
 LDLIBS      = -lm -lX11 -lcairo
 
-#LDLIBS += -lasan
+# LDLIBS += -lasan
 
 WARNINGS  = -Wall -Wextra -Werror -Wpedantic -pedantic-errors
 WARNINGS += -Wpointer-arith -Wcast-align -Wwrite-strings
@@ -26,8 +26,8 @@ endif
 # -DMRD_DEBUG_ONLY_CALLED_AND_ERR
 # -DMRD_DEBUG_BACKTRACE
 ifeq ($(BUILD_TYPE),debug)
-    CFLAGS     := -O0 -g -fno-omit-frame-pointer -rdynamic -DDEBUG -DMRD_DEBUG_DEFAULT $(BACKTRACE) $(INCLUDES) $(WARNINGS)
-    # CFLAGS     := -O0 -g -fno-omit-frame-pointer $(BACKTRACE) $(INCLUDES)
+    CFLAGS     := -O0 -g -fno-omit-frame-pointer -rdynamic -DDEBUG -DMRD_DEBUG_ONLY_CALLED_AND_ERR $(BACKTRACE) $(INCLUDES) $(WARNINGS)
+    # CFLAGS     := -O0 -g -DDEBUG -fno-omit-frame-pointer $(BACKTRACE) $(INCLUDES) $(WARNINGS)
 else
     CFLAGS     := -O2 $(WARNINGS) $(INCLUDES)
 endif

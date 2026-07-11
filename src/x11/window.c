@@ -121,66 +121,71 @@ window_pol_event(void)
 	switch (GeneralEvent.type) {
 	case KeyPress: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN;
-		clicker_event.val.key.keysym =
+		clicker_event.key.keysym =
 			window_translate_x11_keycode_to_clk_keysym(
 				x11_window, GeneralEvent);
 
-		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
-		if (clicker_event.ctrl_down)
+		clicker_event.key.ctrl_down =
+			GeneralEvent.xkey.state & ControlMask;
+		if (clicker_event.key.ctrl_down)
 			break;
 
 		KeySym keysym = NoSymbol;
 
-		int count = Xutf8LookupString(
-			x11_window->xic, &GeneralEvent.xkey,
-			clicker_event.val.key.utf8,
-			sizeof(clicker_event.val.key.utf8) - 1, &keysym, NULL);
+		int count =
+			Xutf8LookupString(x11_window->xic, &GeneralEvent.xkey,
+					  clicker_event.key.utf8,
+					  sizeof(clicker_event.key.utf8) - 1,
+					  &keysym, NULL);
 
-		if (count < 0 ||
-		    count >= (int)sizeof(clicker_event.val.key.utf8)) {
+		if (count < 0 || count >= (int)sizeof(clicker_event.key.utf8)) {
 			count = 0;
 		}
 
 		// null terminate utf8. (so can tell the byte count later)
-		clicker_event.val.key.utf8[count] = '\0';
+		clicker_event.key.utf8[count] = '\0';
 
 		break;
 	}
 
 	case KeyRelease: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYUP;
-		clicker_event.val.key.keysym =
+		clicker_event.key.keysym =
 			window_translate_x11_keycode_to_clk_keysym(
 				x11_window, GeneralEvent);
-		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
-		clicker_event.val.key.utf8[0] = '\0';
+		clicker_event.key.ctrl_down =
+			GeneralEvent.xkey.state & ControlMask;
+		clicker_event.key.utf8[0] = '\0';
 		break;
 	}
 
 	case ButtonPress: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEDOWN;
-		clicker_event.val.mouse.x = GeneralEvent.xbutton.x;
-		clicker_event.val.mouse.y = GeneralEvent.xbutton.y;
-		clicker_event.val.mouse.button = GeneralEvent.xbutton.button;
-		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
+		clicker_event.mouse.x = GeneralEvent.xbutton.x;
+		clicker_event.mouse.y = GeneralEvent.xbutton.y;
+		clicker_event.mouse.button = GeneralEvent.xbutton.button;
+		clicker_event.key.ctrl_down =
+			GeneralEvent.xkey.state & ControlMask;
 		break;
 	}
 
 	case ButtonRelease: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEUP;
-		clicker_event.val.mouse.x = GeneralEvent.xbutton.x;
-		clicker_event.val.mouse.y = GeneralEvent.xbutton.y;
-		clicker_event.val.mouse.button = GeneralEvent.xbutton.button;
-		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
+		clicker_event.mouse.x = GeneralEvent.xbutton.x;
+		clicker_event.mouse.y = GeneralEvent.xbutton.y;
+		clicker_event.mouse.button = GeneralEvent.xbutton.button;
+		clicker_event.key.ctrl_down =
+			GeneralEvent.xkey.state & ControlMask;
 		break;
 	}
 
 	case MotionNotify: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEMOVE;
-		clicker_event.val.mouse.x = GeneralEvent.xmotion.x;
-		clicker_event.val.mouse.y = GeneralEvent.xmotion.y;
-		clicker_event.val.mouse.button = 0;
-		clicker_event.ctrl_down = GeneralEvent.xkey.state & ControlMask;
+		clicker_event.mouse.x = GeneralEvent.xmotion.x;
+		clicker_event.mouse.y = GeneralEvent.xmotion.y;
+		clicker_event.mouse.button = 0;
+		clicker_event.key.ctrl_down =
+			GeneralEvent.xkey.state & ControlMask;
 		break;
 	}
 
