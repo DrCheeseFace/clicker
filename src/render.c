@@ -53,16 +53,13 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 	const float font_size = state.current_buffer.font_size;
 	draw_push_attr(renderer->clk_draw);
 
-	// clip box for text
-	cairo_rectangle(renderer->clk_draw.cairo_ctx,
+	draw_clip_rectangle(renderer->clk_draw,
 			state.current_buffer.frame_origin_x,
 			state.current_buffer.frame_origin_y,
 			renderer->clk_window.window_w -
 				(state.current_buffer.frame_origin_x * 2),
 			renderer->clk_window.window_h -
 				(state.current_buffer.frame_origin_y * 2));
-
-	cairo_clip(renderer->clk_draw.cairo_ctx); // fuck u lol bruh yuy
 
 	draw_set_font_size(renderer->clk_draw, font_size);
 	draw_set_font_color(renderer->clk_draw, 1, 1, 1);
@@ -169,15 +166,15 @@ render_text_buffer_cursor(struct clk_Draw clk_draw,
 		absolute_row - state.current_buffer.view_start_row;
 	const size_t relative_col = absolute_col;
 
-	size_t origin_y = state.current_buffer.frame_origin_y +
-			  (relative_row * clk_draw.current_font_height);
-	size_t origin_x = state.current_buffer.frame_origin_x +
-			  (relative_col * clk_draw.current_font_max_x_advance);
+	const size_t origin_y = state.current_buffer.frame_origin_y +
+				(relative_row * clk_draw.current_font_height);
+	const size_t origin_x =
+		state.current_buffer.frame_origin_x +
+		(relative_col * clk_draw.current_font_max_x_advance);
 
 	draw_fill_rectangle(clk_draw, origin_x, origin_y,
-	clk_draw.current_font_max_x_advance,
-			    clk_draw.current_font_height,
-			    1, 1, 1,
+			    clk_draw.current_font_max_x_advance,
+			    clk_draw.current_font_height, 1, 1, 1,
 			    CAIRO_OPERATOR_DIFFERENCE);
 }
 

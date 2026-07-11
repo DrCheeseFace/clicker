@@ -233,6 +233,9 @@ void draw_fill_rectangle(struct clk_Draw clicker_draw, uint16_t x, uint16_t y,
 			 uint16_t w, uint16_t h, float r, float g, float b,
 			 cairo_operator_t operator);
 
+void draw_clip_rectangle(struct clk_Draw clicker_draw, double x, double y,
+			 double w, double h);
+
 //
 // RENDER
 //

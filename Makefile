@@ -13,6 +13,7 @@ WARNINGS += -Wswitch-default -Wunreachable-code
 WARNINGS += -Wbad-function-cast -Wcast-qual -Wundef
 WARNINGS += -Wshadow -Wfloat-equal -Wformat=2
 WARNINGS += -Wredundant-decls -Wnested-externs
+
 # WARNINGS += -fsanitize=address
 
 BUILD_TYPE ?= release
@@ -25,7 +26,8 @@ endif
 # -DMRD_DEBUG_ONLY_CALLED_AND_ERR
 # -DMRD_DEBUG_BACKTRACE
 ifeq ($(BUILD_TYPE),debug)
-    CFLAGS     := -O0 -g -fno-omit-frame-pointer -rdynamic -DDEBUG -DMRD_DEBUG_DEFAULT $(BACKTRACE) $(INCLUDES)
+    CFLAGS     := -O0 -g -fno-omit-frame-pointer -rdynamic -DDEBUG -DMRD_DEBUG_DEFAULT $(BACKTRACE) $(INCLUDES) $(WARNINGS)
+    # CFLAGS     := -O0 -g -fno-omit-frame-pointer $(BACKTRACE) $(INCLUDES)
 else
     CFLAGS     := -O2 $(WARNINGS) $(INCLUDES)
 endif
@@ -44,7 +46,7 @@ SRC_LIB        = src/main.c \
 		 src/x11/window.c \
 		 src/render.c \
 		 src/editor.c \
-		 src/x11/text.c
+		 src/x11/draw.c
 
 SRC_TEST_MAIN  = test/test.c \
 		 src/posix/buffers.c \
@@ -52,7 +54,7 @@ SRC_TEST_MAIN  = test/test.c \
 		 src/x11/window.c \
 		 src/render.c \
 		 src/editor.c \
-		 src/x11/text.c
+		 src/x11/draw.c
 
 SRC_MR_UTILS   = src/mr_utils/src/mrd_debug.c \
                  src/mr_utils/src/mrl_logger.c \
