@@ -35,9 +35,7 @@ Err process_arg(char *arg);
 Bool utf8_is_continuation_byte(char byte);
 void utf8_seek_next(char **ptr);
 
-#define UTF8_BACKSPACE 0x08
 // @TODO make this hex?
-#define UTF8_FULL_BLOCK "█"
 #define UTF8_RETURN '\n'
 #define UTF8_NEWLINE '\r'
 
@@ -108,8 +106,8 @@ void buffer_delete_utf8_char(BufferID buffer_id);
 // zero indexed row
 void *buffer_get_ptr_of_line(BufferID buffer_id, size_t row);
 
-void buffer_get_row_col_of_utf8(BufferID buffer_id, size_t char_idx,
-				size_t *col, size_t *row);
+/* void buffer_get_row_col_of_utf8(BufferID buffer_id, size_t char_idx, */
+/* 				size_t *col, size_t *row); */
 
 #define BUFFERS_GET_BUFFER_BY_ID(idx) (buffers[(idx)])
 
@@ -142,6 +140,7 @@ enum clk_Keysym {
 	CLK_KEYSYM_ARROW_DOWN,
 	CLK_KEYSYM_ARROW_LEFT,
 	CLK_KEYSYM_ARROW_RIGHT,
+	CLK_KEYSYM_BACKSPACE,
 	CLK_KEYSYM_COUNT,
 	CLK_KEYSYM_NOT_FOUND,
 
@@ -283,13 +282,18 @@ struct clk_EditorState {
 		float frame_origin_x;
 		float frame_origin_y;
 
-		size_t cursor_position;
+		struct {
+			size_t row;
+			size_t col;
+		} cursor_position;
 
 		size_t view_start_row;
 		size_t view_start_column;
 
 	} current_buffer;
 };
+
+extern struct clk_EditorState clicker_state;
 
 void editor_init(struct clk_EditorState *state, const char *filepath);
 

@@ -24,7 +24,8 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 	state->current_buffer.frame_origin_x = 50;
 	state->current_buffer.frame_origin_y = 50;
 
-	state->current_buffer.cursor_position = 1;
+	state->current_buffer.cursor_position.row = 0;
+	state->current_buffer.cursor_position.col = 0;
 
 	state->current_buffer.view_start_row = 0;
 	state->current_buffer.view_start_column = 0;
@@ -69,11 +70,41 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 	}
 
 	if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) {
-		if (*(uint32_t *)event.key.utf8 == UTF8_BACKSPACE) {
+		switch (event.key.keysym) {
+		case CLK_KEYSYM_BACKSPACE: {
 			buffer_delete_utf8_char(state->current_buffer.buffer);
-		} else {
+			return;
+		}
+		case CLK_KEYSYM_ARROW_UP: {
+			if (state->current_buffer.cursor_position.row > 0) {
+				state->current_buffer.cursor_position.row--;
+			}
+
+			return;
+		}
+
+		case CLK_KEYSYM_ARROW_DOWN: {
+			state->current_buffer.cursor_position.row++;
+			return;
+		}
+
+		case CLK_KEYSYM_ARROW_LEFT: {
+			if (state->current_buffer.cursor_position.col > 0) {
+				state->current_buffer.cursor_position.col--;
+			}
+			return;
+		}
+
+		case CLK_KEYSYM_ARROW_RIGHT: {
+			state->current_buffer.cursor_position.col++;
+			return;
+		}
+
+		default:
+			// @TODO function to check if utf8 is actgually text and allat
 			buffer_insert_utf8(state->current_buffer.buffer,
 					   event.key.utf8);
+			return;
 		}
 	}
 }

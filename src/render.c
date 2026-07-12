@@ -156,15 +156,10 @@ mrm_internal void
 render_text_buffer_cursor(struct clk_Draw clk_draw,
 			  struct clk_EditorState state)
 {
-	size_t absolute_row;
-	size_t absolute_col;
-	buffer_get_row_col_of_utf8(state.current_buffer.buffer,
-				   state.current_buffer.cursor_position,
-				   &absolute_col, &absolute_row);
+	const size_t relative_row = state.current_buffer.cursor_position.row -
+				    state.current_buffer.view_start_row;
 
-	const size_t relative_row =
-		absolute_row - state.current_buffer.view_start_row;
-	const size_t relative_col = absolute_col;
+	const size_t relative_col = state.current_buffer.cursor_position.col;
 
 	const size_t origin_y = state.current_buffer.frame_origin_y +
 				(relative_row * clk_draw.current_font_height);
@@ -184,6 +179,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 	draw_push_attr(renderer.clk_draw);
 
 	char debug_event_snack_text[256];
+
 	snprintf(debug_event_snack_text, sizeof(debug_event_snack_text),
 		 "eventtype: %d \n"
 		 "keysym: %s \n"
@@ -192,7 +188,9 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 "ctrl_down: %d \n"
 		 "mouse_x: %d \n"
 		 "mouse_y: %d \n"
-		 "text_len: %zu",
+		 "text_len: %zu\n"
+		 "cursor_row: %zu \n"
+		 "cursor_col: %zu \n",
 		 clicker_event.type,
 		 clk_keysym_to_string[clicker_event.key.keysym],
 		 clicker_event.key.utf8,
@@ -200,7 +198,9 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 clicker_event.key.ctrl_down, clicker_event.mouse.x,
 		 clicker_event.mouse.y,
 		 (size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
-			  (buffers[0]->gap_end - buffers[0]->gap_start)));
+			  (buffers[0]->gap_end - buffers[0]->gap_start)),
+		 clicker_state.current_buffer.cursor_position.row,
+		 clicker_state.current_buffer.cursor_position.col);
 
 	draw_set_font_size(renderer.clk_draw, 20.0f);
 	draw_set_font_color(renderer.clk_draw, 1, 1, 1);

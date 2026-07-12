@@ -6,8 +6,8 @@
 #include <string.h>
 
 const XID x11_keycode_to_clk_keysym_map[CLK_KEYSYM_COUNT] = { XK_Up, XK_Down,
-							      XK_Left,
-							      XK_Right };
+							      XK_Left, XK_Right,
+							      XK_BackSpace };
 
 mrm_internal enum clk_Keysym
 window_translate_x11_keycode_to_clk_keysym(struct x11_Window *x11_window,
@@ -127,8 +127,6 @@ window_pol_event(void)
 
 		clicker_event.key.ctrl_down =
 			GeneralEvent.xkey.state & ControlMask;
-		if (clicker_event.key.ctrl_down)
-			break;
 
 		KeySym keysym = NoSymbol;
 
