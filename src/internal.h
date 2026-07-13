@@ -150,6 +150,7 @@ enum clk_Keysym {
 extern const char *clk_keysym_to_string[CLK_KEYSYM_COUNT_];
 
 enum clk_EventMouse {
+	CLK_WINDOW_EVENT_MOUSE_NONE,
 	CLK_WINDOW_EVENT_MOUSE1,
 	CLK_WINDOW_EVENT_MOUSE2,
 	CLK_WINDOW_EVENT_MOUSE3,

@@ -186,6 +186,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 "utf8: %s \n"
 		 "utf8_hex: 0x%.2hhx \n"
 		 "ctrl_down: %d \n"
+		 "mouse_button: %d \n"
 		 "mouse_x: %d \n"
 		 "mouse_y: %d \n"
 		 "text_len: %zu\n"
@@ -195,8 +196,8 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 clk_keysym_to_string[clicker_event.key.keysym],
 		 clicker_event.key.utf8,
 		 (unsigned char)clicker_event.key.utf8[0],
-		 clicker_event.key.ctrl_down, clicker_event.mouse.x,
-		 clicker_event.mouse.y,
+		 clicker_event.key.ctrl_down, clicker_event.mouse.button,
+		 clicker_event.mouse.x, clicker_event.mouse.y,
 		 (size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
 			  (buffers[0]->gap_end - buffers[0]->gap_start)),
 		 clicker_state.current_buffer.cursor_position.row,

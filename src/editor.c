@@ -1,11 +1,16 @@
 #include "internal.h"
 #include <locale.h>
+#include <math.h>
 #include <mr_utils.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+mrm_internal void
+editor_click_within_current_buffer(struct clk_EditorState *state,
+				   struct clk_Event event);
 
 void
 editor_init(struct clk_EditorState *state, const char *filepath)
@@ -107,6 +112,19 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 			return;
 		}
 	}
+
+	if (event.type == CLK_WINDOW_EVENT_TYPE_MOUSEDOWN) {
+		switch (event.mouse.button) {
+		case CLK_WINDOW_EVENT_MOUSE1: {
+			editor_click_within_current_buffer(state, event);
+			return;
+		}
+
+		default: {
+			return;
+		}
+		}
+	}
 }
 
 void
@@ -161,4 +179,38 @@ editor_fatal(struct clk_EditorState *state, const char *err_msg,
 	if (state->debug_mode) {
 		exit(1);
 	}
+}
+
+mrm_internal void
+editor_click_within_current_buffer(struct clk_EditorState *state,
+				   struct clk_Event event)
+{
+	const uint16_t mouse_x_pos = event.mouse.x;
+	const uint16_t mouse_y_pos = event.mouse.y;
+
+	// check bounds of text frame
+	if (mouse_x_pos < state->current_buffer.frame_origin_x)
+		return;
+	if (mouse_x_pos > (clicker_renderer.clk_window.window_w -
+			   state->current_buffer.frame_origin_x))
+		return;
+	if (mouse_y_pos < state->current_buffer.frame_origin_y)
+		return;
+	if (mouse_y_pos > (clicker_renderer.clk_window.window_h -
+			   state->current_buffer.frame_origin_y))
+		return;
+
+	// move cursor within text frame
+	const float origin_x = state->current_buffer.frame_origin_x;
+	const float origin_y = state->current_buffer.frame_origin_y;
+
+	const double font_height =
+		clicker_renderer.clk_draw.current_font_height;
+	const double font_width =
+		clicker_renderer.clk_draw.current_font_max_x_advance;
+
+	state->current_buffer.cursor_position.col =
+		floorf((float)mouse_x_pos - origin_x) / (float)font_width;
+	state->current_buffer.cursor_position.row =
+		floorf((float)mouse_y_pos - origin_y) / (float)font_height;
 }
