@@ -58,7 +58,7 @@ typedef struct {
 } Buffer;
 
 // -1 for the null terminator :(
-#define BUFFER_MAX_TEXT_BYTES_LENGTH(size) ((size) - sizeof(Buffer))
+#define BUFFER_MAX_TEXT_BYTES_LENGTH(size) ((size) - sizeof(Buffer) - 1)
 
 extern Buffer *buffers[MAX_BUFFERS];
 extern size_t system_page_size;

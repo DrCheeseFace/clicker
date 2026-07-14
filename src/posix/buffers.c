@@ -100,7 +100,7 @@ buffer_create_blank(size_t size, BufferID *const new_buffer_id)
 
 	memset(new_buffer, 0, sizeof(*new_buffer));
 
-	memset(new_buffer->text, 0, BUFFER_MAX_TEXT_BYTES_LENGTH(size));
+	memset(new_buffer->text, 0, BUFFER_MAX_TEXT_BYTES_LENGTH(size + 1));
 
 	new_buffer->gap_start = 0;
 	new_buffer->gap_end = BUFFER_MAX_TEXT_BYTES_LENGTH(size);
