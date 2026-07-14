@@ -57,6 +57,7 @@ typedef struct {
 	char text[];
 } Buffer;
 
+// -1 for the null terminator :(
 #define BUFFER_MAX_TEXT_BYTES_LENGTH(size) ((size) - sizeof(Buffer))
 
 extern Buffer *buffers[MAX_BUFFERS];
@@ -106,8 +107,9 @@ void buffer_delete_utf8_char(BufferID buffer_id);
 // zero indexed row
 void *buffer_get_ptr_of_line(BufferID buffer_id, size_t row);
 
-/* void buffer_get_row_col_of_utf8(BufferID buffer_id, size_t char_idx, */
-/* 				size_t *col, size_t *row); */
+void buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row,
+				size_t col);
+void buffer_seek_next_utf8(Buffer *const buffer, char **p);
 
 #define BUFFERS_GET_BUFFER_BY_ID(idx) (buffers[(idx)])
 

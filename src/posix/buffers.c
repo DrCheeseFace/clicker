@@ -101,6 +101,7 @@ buffer_create_blank(size_t size, BufferID *const new_buffer_id)
 	memset(new_buffer, 0, sizeof(*new_buffer));
 
 	memset(new_buffer->text, 0, BUFFER_MAX_TEXT_BYTES_LENGTH(size));
+
 	new_buffer->gap_start = 0;
 	new_buffer->gap_end = BUFFER_MAX_TEXT_BYTES_LENGTH(size);
 
@@ -141,26 +142,71 @@ buffer_move_gap_to_utf8_idx(const BufferID buffer_id, const size_t char_idx)
 }
 
 void
-buffer_move_gap(const BufferID buffer_id, const size_t gap_start)
+buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row, size_t col)
 {
 	Buffer *const buffer = buffers[buffer_id];
+
+	char *p = buffer->text;
+	if (buffer->gap_start == 0) {
+		p = buffer->text + buffer->gap_end;
+	}
+
+	while (row > 0 &&
+	       p < buffer->text + BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size)) {
+		if (*p == UTF8_RETURN || *p == UTF8_NEWLINE) {
+			row--;
+		}
+
+		buffer_seek_next_utf8(buffer, &p);
+	}
+
+	while (col > 0) {
+		if (*p == UTF8_RETURN || *p == UTF8_NEWLINE) {
+			break;
+		}
+		buffer_seek_next_utf8(buffer, &p);
+		col--;
+	}
+
+	buffer_move_gap(buffer_id, p - buffer->text);
+}
+
+void
+buffer_move_gap(const BufferID buffer_id, size_t gap_start)
+{
+	Buffer *const buffer = buffers[buffer_id];
+
+	const size_t gap_size = buffer->gap_end - buffer->gap_start;
+
+	const size_t max_text_bytes =
+		BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size);
+	const size_t max_valid_gap_start = max_text_bytes - gap_size;
+
+	if (gap_start > max_valid_gap_start) {
+		gap_start = max_valid_gap_start;
+	}
+
 	if (buffer->gap_start == gap_start)
 		return;
 
 	if (gap_start < buffer->gap_start) {
+		// moving left
 		const size_t bytes_to_move = buffer->gap_start - gap_start;
-		memmove(buffer->text + buffer->gap_end - bytes_to_move,
-			buffer->text + buffer->gap_start - bytes_to_move,
-			bytes_to_move);
-		buffer->gap_end = buffer->gap_end - bytes_to_move;
+		memmove(buffer->text + gap_start + gap_size,
+			buffer->text + gap_start, bytes_to_move);
 	} else {
+		// moving right
 		const size_t bytes_to_move = gap_start - buffer->gap_start;
 		memmove(buffer->text + buffer->gap_start,
-			buffer->text + buffer->gap_end, bytes_to_move);
-		buffer->gap_end = buffer->gap_end + bytes_to_move;
+			buffer->text + buffer->gap_start + gap_size,
+			bytes_to_move);
 	}
 
 	buffer->gap_start = gap_start;
+	buffer->gap_end = gap_start + gap_size;
+	*(buffer->text + buffer->gap_start) = '\0';
+	*(buffer->text + buffer->gap_end) = '\0';
+
 	return;
 }
 
@@ -358,14 +404,19 @@ buffer_get_ptr_of_line(BufferID buffer_id, size_t row)
 			current_line++;
 		}
 
-		p++;
-
-		// @TODO this is hacky. i think two seperate loops for each region is better
-		// skip past buffer gap
-		if (p == buffer->text + buffer->gap_start) {
-			p = buffer->text + buffer->gap_end;
-		}
+		buffer_seek_next_utf8(buffer, &p);
 	}
 
 	return p;
+}
+
+void
+buffer_seek_next_utf8(Buffer *const buffer, char **p)
+{
+	utf8_seek_next(p);
+
+	if (*p == buffer->text + buffer->gap_start) {
+		*p = buffer->text + buffer->gap_end;
+		return;
+	}
 }

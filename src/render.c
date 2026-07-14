@@ -94,6 +94,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 				    renderer->clk_draw.current_font_height) +
 				   1;
 
+	// @TODO check if this func is doing what i want
 	char *end_p = buffer_get_ptr_of_line(state.current_buffer.buffer,
 					     start_row + view_height);
 
@@ -101,27 +102,14 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 
 	Buffer *const buffer = buffers[state.current_buffer.buffer];
 
-	while (start_p < end_p) {
-		if (ptr == buffer->text + buffer->gap_start) {
-			// display to screen but dont make a newline
-			*(buffer->text + buffer->gap_start) = '\0';
-
-			draw_write_text(renderer->clk_draw, start_p, &extents);
-
-			start_p = buffer->text + buffer->gap_end;
-			ptr = start_p;
-
-			continue;
-		}
-
+	while (ptr < end_p) {
 		if (*ptr == UTF8_RETURN || *ptr == UTF8_NEWLINE) {
 			char orig_char = *ptr;
 			*ptr = '\0';
 
-			if (strlen(start_p) != 0) {
+			if (start_p != ptr) {
 				draw_write_text(renderer->clk_draw, start_p,
 						&extents);
-
 				draw_relative_move_cursor_to(
 					renderer->clk_draw, -extents.x_advance,
 					renderer->clk_draw.current_font_height);
@@ -133,18 +121,38 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 
 			*ptr = orig_char;
 
-			// seek to past newline
-			// if past newline into gap, seek to end of gap
-			start_p = ptr + 1;
-			if (start_p == buffer->text + buffer->gap_start) {
-				start_p = buffer->text + buffer->gap_end;
-			}
-			ptr = start_p;
+			buffer_seek_next_utf8(buffer, &ptr);
+			start_p = ptr;
+			continue;
+		}
 
+		if (ptr == buffer->text + buffer->gap_start) {
+			char orig_char = *ptr;
+			*ptr = '\0';
+
+			if (start_p != ptr) {
+				draw_write_text(renderer->clk_draw, start_p,
+						&extents);
+			}
+
+			*ptr = orig_char;
+
+			ptr = buffer->text + buffer->gap_end;
+			start_p = ptr;
 			continue;
 		}
 
 		utf8_seek_next(&ptr);
+	}
+
+	// if text doesnt end on a newline
+	if (start_p < end_p && start_p != ptr) {
+		char orig_char = *ptr;
+
+		// @TODO this goes out of bounds for some reason
+		*ptr = '\0';
+		draw_write_text(renderer->clk_draw, start_p, &extents);
+		*ptr = orig_char;
 	}
 
 	draw_pop_attr(renderer->clk_draw);

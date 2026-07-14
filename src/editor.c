@@ -213,4 +213,29 @@ editor_click_within_current_buffer(struct clk_EditorState *state,
 		floorf((float)mouse_x_pos - origin_x) / (float)font_width;
 	state->current_buffer.cursor_position.row =
 		floorf((float)mouse_y_pos - origin_y) / (float)font_height;
+
+	char *ptr = buffer_get_ptr_of_line(
+		state->current_buffer.buffer,
+		state->current_buffer.cursor_position.row);
+
+	Buffer *const buffer = buffers[state->current_buffer.buffer];
+
+	size_t col_count = 0;
+	while (ptr <
+	       buffer->text + BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size)) {
+		if (*ptr == UTF8_NEWLINE || *ptr == UTF8_RETURN) {
+			break;
+		}
+		buffer_seek_next_utf8(buffer, &ptr);
+		col_count++;
+	}
+
+	if (state->current_buffer.cursor_position.col > col_count) {
+		state->current_buffer.cursor_position.col = col_count;
+	}
+
+	/* @TODO curos position row snap to highest row possible */
+	buffer_move_gap_to_row_col(state->current_buffer.buffer,
+				   state->current_buffer.cursor_position.row,
+				   state->current_buffer.cursor_position.col);
 }
