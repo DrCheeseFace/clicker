@@ -70,6 +70,15 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 {
 	state->resize_required = event.type == CLK_WINDOW_EVENT_TYPE_RESIZEREQ;
 
+	if (state->debug_mode) {
+		if (event.key.keysym == CLK_KEYSYM_DEBUG_BIND) {
+			debug_save_buffer_to_file(
+				buffers[state->current_buffer.buffer],
+				"./buffer_dump.txt");
+			return;
+		}
+	}
+
 	if (event.type == CLK_WINDOW_EVENT_TYPE_CLOSEREQ) {
 		state->is_running = FALSE;
 	}

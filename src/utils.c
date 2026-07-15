@@ -8,7 +8,7 @@ global_variable const char *option_to_str[OPTION_FLAGS_COUNT] = {
 
 const char *clk_keysym_to_string[CLK_KEYSYM_COUNT_] = {
 	"ARROW UP",  "ARROW DOWN", "ARROW LEFT", "ARROW RIGHT",
-	"BACKSPACE", "____",	   "NOT FOUND"
+	"BACKSPACE", "DEBUG_BIND", "____",	 "NOT FOUND"
 };
 
 void
@@ -84,4 +84,14 @@ utf8_seek_next(char **ptr)
 	while (utf8_is_continuation_byte(**ptr)) {
 		(*ptr)++;
 	}
+}
+
+void
+debug_save_buffer_to_file(Buffer *buffer, const char *filepath)
+{
+	FILE *dump_to = fopen(filepath, "w+");
+
+	fwrite(buffer, buffer->size, sizeof(char), dump_to);
+
+	fclose(dump_to);
 }

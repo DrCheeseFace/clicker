@@ -94,7 +94,6 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 				    renderer->clk_draw.current_font_height) +
 				   1;
 
-	// @TODO check if this func is doing what i want
 	char *end_p = buffer_get_ptr_of_line(state.current_buffer.buffer,
 					     start_row + view_height);
 
@@ -149,7 +148,6 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 	if (start_p < end_p && start_p != ptr) {
 		char orig_char = *ptr;
 
-		// @TODO this goes out of bounds for some reason
 		*ptr = '\0';
 		draw_write_text(renderer->clk_draw, start_p, &extents);
 		*ptr = orig_char;
