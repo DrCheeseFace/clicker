@@ -65,40 +65,39 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 	draw_set_font_color(renderer->clk_draw, 1, 1, 1);
 	draw_update_font_extents(&renderer->clk_draw);
 
+	// DO NOT TRY AT HOME
 	size_t start_row = state.current_buffer.view_start_row;
+	double cursor_draw_position_x;
+	double cursor_draw_position_y;
 	if (state.current_buffer.view_start_row != 0) {
-		// no + text_height offset to partially render line above view of buffer
 		start_row--;
-		draw_move_cursor_to(renderer->clk_draw,
-				    state.current_buffer.frame_origin_x,
-				    state.current_buffer.frame_origin_y);
+		cursor_draw_position_x = state.current_buffer.frame_origin_x;
+		cursor_draw_position_y = state.current_buffer.frame_origin_y;
 	} else {
-		draw_move_cursor_to(
-			renderer->clk_draw, state.current_buffer.frame_origin_x,
-			state.current_buffer.frame_origin_y +
-				renderer->clk_draw.current_font_ascent);
+		cursor_draw_position_x = state.current_buffer.frame_origin_x;
+		cursor_draw_position_y = state.current_buffer.frame_origin_y +
+					 renderer->clk_draw.current_font_ascent;
 	}
 
-	cairo_text_extents_t extents;
+	const double left_limit = cursor_draw_position_x;
+	draw_move_cursor_to(renderer->clk_draw, cursor_draw_position_x,
+			    cursor_draw_position_y);
 
-	// @TODO impl this when moving view with cursor
+	cairo_text_extents_t extents;
 	size_t horizontal_offset = state.current_buffer.view_start_column;
 	ignore horizontal_offset;
 
-	char *start_p =
-		buffer_get_ptr_of_line(state.current_buffer.buffer, start_row);
-
-	// +1 so we can partially see the cutoff line at the bottom
 	const size_t view_height = ((renderer->clk_window.window_h -
 				     state.current_buffer.frame_origin_y) /
 				    renderer->clk_draw.current_font_height) +
 				   1;
 
+	char *start_p =
+		buffer_get_ptr_of_line(state.current_buffer.buffer, start_row);
 	char *end_p = buffer_get_ptr_of_line(state.current_buffer.buffer,
 					     start_row + view_height);
 
 	char *ptr = start_p;
-
 	Buffer *const buffer = buffers[state.current_buffer.buffer];
 
 	while (ptr < end_p) {
@@ -109,14 +108,15 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 			if (start_p != ptr) {
 				draw_write_text(renderer->clk_draw, start_p,
 						&extents);
-				draw_relative_move_cursor_to(
-					renderer->clk_draw, -extents.x_advance,
-					renderer->clk_draw.current_font_height);
-			} else {
-				draw_relative_move_cursor_to(
-					renderer->clk_draw, 0,
-					renderer->clk_draw.current_font_height);
 			}
+
+			cursor_draw_position_x = left_limit;
+			cursor_draw_position_y =
+				cursor_draw_position_y +
+				renderer->clk_draw.current_font_height;
+			draw_move_cursor_to(renderer->clk_draw,
+					    cursor_draw_position_x,
+					    cursor_draw_position_y);
 
 			*ptr = orig_char;
 
@@ -125,6 +125,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 			continue;
 		}
 
+		// need to jump the gap
 		if (ptr == buffer->text + buffer->gap_start) {
 			char orig_char = *ptr;
 			*ptr = '\0';
@@ -132,6 +133,12 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 			if (start_p != ptr) {
 				draw_write_text(renderer->clk_draw, start_p,
 						&extents);
+
+				cursor_draw_position_x =
+					left_limit + extents.x_advance;
+				draw_move_cursor_to(renderer->clk_draw,
+						    cursor_draw_position_x,
+						    cursor_draw_position_y);
 			}
 
 			*ptr = orig_char;

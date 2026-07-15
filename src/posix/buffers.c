@@ -100,7 +100,8 @@ buffer_create_blank(size_t size, BufferID *const new_buffer_id)
 
 	memset(new_buffer, 0, sizeof(*new_buffer));
 
-	memset(new_buffer->text, 0, BUFFER_MAX_TEXT_BYTES_LENGTH(size + 1));
+	// +1 to include the null terminator
+	memset(new_buffer->text, 0, BUFFER_MAX_TEXT_BYTES_LENGTH(size) + 1);
 
 	new_buffer->gap_start = 0;
 	new_buffer->gap_end = BUFFER_MAX_TEXT_BYTES_LENGTH(size);
@@ -168,7 +169,15 @@ buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row, size_t col)
 		col--;
 	}
 
-	buffer_move_gap(buffer_id, p - buffer->text);
+	size_t gap_start;
+	if (p < buffer->text + buffer->gap_start) {
+		gap_start = p - buffer->text;
+	} else {
+		const size_t gap_size = buffer->gap_end - buffer->gap_start;
+		gap_start = (p - buffer->text) - gap_size;
+	}
+
+	buffer_move_gap(buffer_id, gap_start);
 }
 
 void
@@ -204,8 +213,6 @@ buffer_move_gap(const BufferID buffer_id, size_t gap_start)
 
 	buffer->gap_start = gap_start;
 	buffer->gap_end = gap_start + gap_size;
-	*(buffer->text + buffer->gap_start) = '\0';
-	*(buffer->text + buffer->gap_end) = '\0';
 
 	return;
 }
@@ -343,10 +350,12 @@ buffer_delete_utf8_char(BufferID buffer_id)
 
 	if (buffer->gap_start != 0) {
 		buffer->gap_start--;
+
 		while (utf8_is_continuation_byte(
 			*(buffer->text + buffer->gap_start))) {
 			buffer->gap_start--;
 		}
+
 	}
 }
 
@@ -373,6 +382,9 @@ buffer_expand_gap_by_page(const BufferID buffer_id)
 		BUFFER_MAX_TEXT_BYTES_LENGTH(new_buffer_size) - bytes_to_copy;
 
 	new_buffer->size = new_buffer_size;
+
+	*(new_buffer->text + BUFFER_MAX_TEXT_BYTES_LENGTH(new_buffer->size) +
+	  1) = '\0';
 
 	memmove(new_buffer->text + new_buffer->gap_end,
 		old_buffer->text + old_buffer->gap_end, bytes_to_copy);
