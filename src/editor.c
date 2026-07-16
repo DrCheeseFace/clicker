@@ -12,6 +12,17 @@ mrm_internal void
 editor_click_within_current_buffer(struct clk_EditorState *state,
 				   struct clk_Event event);
 
+mrm_internal void
+editor_handle_current_buffer_input(struct clk_EditorState *state,
+				   struct clk_Event event);
+
+mrm_internal void editor_handle_buffer_text_input(struct clk_EditorState *state,
+						  struct clk_Event event);
+
+mrm_internal void editor_handle_buffer_backspace(struct clk_EditorState *state);
+
+mrm_internal Bool is_typeable_character(struct clk_Event event);
+
 void
 editor_init(struct clk_EditorState *state, const char *filepath)
 {
@@ -68,8 +79,6 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 void
 editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 {
-	state->resize_required = event.type == CLK_WINDOW_EVENT_TYPE_RESIZEREQ;
-
 	if (state->debug_mode) {
 		if (event.key.keysym == CLK_KEYSYM_DEBUG_BIND) {
 			debug_save_buffer_to_file(
@@ -79,61 +88,19 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 		}
 	}
 
+	state->resize_required = event.type == CLK_WINDOW_EVENT_TYPE_RESIZEREQ;
+
+	state->current_buffer.view_height =
+		((clicker_renderer.clk_window.window_h -
+		  state->current_buffer.frame_origin_y) /
+		 clicker_renderer.clk_draw.current_font_height) +
+		1;
+
 	if (event.type == CLK_WINDOW_EVENT_TYPE_CLOSEREQ) {
 		state->is_running = FALSE;
 	}
 
-	if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) {
-		switch (event.key.keysym) {
-		case CLK_KEYSYM_BACKSPACE: {
-			buffer_delete_utf8_char(state->current_buffer.buffer);
-			return;
-		}
-		case CLK_KEYSYM_ARROW_UP: {
-			if (state->current_buffer.cursor_position.row > 0) {
-				state->current_buffer.cursor_position.row--;
-			}
-
-			return;
-		}
-
-		case CLK_KEYSYM_ARROW_DOWN: {
-			state->current_buffer.cursor_position.row++;
-			return;
-		}
-
-		case CLK_KEYSYM_ARROW_LEFT: {
-			if (state->current_buffer.cursor_position.col > 0) {
-				state->current_buffer.cursor_position.col--;
-			}
-			return;
-		}
-
-		case CLK_KEYSYM_ARROW_RIGHT: {
-			state->current_buffer.cursor_position.col++;
-			return;
-		}
-
-		default:
-			// @TODO function to check if utf8 is actgually text and allat
-			buffer_insert_utf8(state->current_buffer.buffer,
-					   event.key.utf8);
-			return;
-		}
-	}
-
-	if (event.type == CLK_WINDOW_EVENT_TYPE_MOUSEDOWN) {
-		switch (event.mouse.button) {
-		case CLK_WINDOW_EVENT_MOUSE1: {
-			editor_click_within_current_buffer(state, event);
-			return;
-		}
-
-		default: {
-			return;
-		}
-		}
-	}
+	editor_handle_current_buffer_input(state, event);
 }
 
 void
@@ -187,6 +154,114 @@ editor_fatal(struct clk_EditorState *state, const char *err_msg,
 
 	if (state->debug_mode) {
 		exit(1);
+	}
+}
+
+mrm_internal void
+editor_handle_current_buffer_input(struct clk_EditorState *state,
+				   struct clk_Event event)
+{
+	if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN) {
+		switch (event.key.keysym) {
+		case CLK_KEYSYM_BACKSPACE: {
+			editor_handle_buffer_backspace(state);
+			return;
+		}
+
+		case CLK_KEYSYM_ARROW_UP: {
+			if (state->current_buffer.cursor_position.row > 0) {
+				state->current_buffer.cursor_position.row--;
+				size_t row_length = get_row_length(
+					state->current_buffer.buffer,
+					state->current_buffer.cursor_position
+						.row);
+				if (row_length <
+				    state->current_buffer.cursor_position.col) {
+					state->current_buffer.cursor_position
+						.col = row_length;
+				}
+				buffer_move_gap_to_row_col(
+					state->current_buffer.buffer,
+					state->current_buffer.cursor_position
+						.row,
+					state->current_buffer.cursor_position
+						.col);
+			}
+
+			return;
+		}
+
+		case CLK_KEYSYM_ARROW_DOWN: {
+			state->current_buffer.cursor_position.row++;
+
+			size_t row_length = get_row_length(
+				state->current_buffer.buffer,
+				state->current_buffer.cursor_position.row);
+			if (row_length <
+			    state->current_buffer.cursor_position.col) {
+				state->current_buffer.cursor_position.col =
+					row_length;
+			}
+
+			buffer_move_gap_to_row_col(
+				state->current_buffer.buffer,
+				state->current_buffer.cursor_position.row,
+				state->current_buffer.cursor_position.col);
+			return;
+		}
+
+		case CLK_KEYSYM_ARROW_LEFT: {
+			if (state->current_buffer.cursor_position.col > 0) {
+				state->current_buffer.cursor_position.col--;
+				buffer_move_gap_to_row_col(
+					state->current_buffer.buffer,
+					state->current_buffer.cursor_position
+						.row,
+					state->current_buffer.cursor_position
+						.col);
+			}
+			return;
+		}
+
+		case CLK_KEYSYM_ARROW_RIGHT: {
+			size_t row_length = get_row_length(
+				state->current_buffer.buffer,
+				state->current_buffer.cursor_position.row);
+
+			if (state->current_buffer.cursor_position.col <
+			    row_length) {
+				state->current_buffer.cursor_position.col++;
+				buffer_move_gap_to_row_col(
+					state->current_buffer.buffer,
+					state->current_buffer.cursor_position
+						.row,
+					state->current_buffer.cursor_position
+						.col);
+			}
+			return;
+		}
+
+		default: {
+			// @TODO function to check if utf8 is actgually text and allat
+			if (is_typeable_character(event)) {
+				editor_handle_buffer_text_input(state, event);
+			}
+			return;
+		}
+		}
+	}
+
+	if (event.type == CLK_WINDOW_EVENT_TYPE_MOUSEDOWN) {
+		switch (event.mouse.button) {
+		case CLK_WINDOW_EVENT_MOUSE1: {
+			editor_click_within_current_buffer(state, event);
+			return;
+		}
+
+		default: {
+			return;
+		}
+		}
 	}
 }
 
@@ -247,4 +322,54 @@ editor_click_within_current_buffer(struct clk_EditorState *state,
 	buffer_move_gap_to_row_col(state->current_buffer.buffer,
 				   state->current_buffer.cursor_position.row,
 				   state->current_buffer.cursor_position.col);
+}
+
+mrm_internal void
+editor_handle_buffer_text_input(struct clk_EditorState *state,
+				struct clk_Event event)
+{
+	buffer_insert_utf8(state->current_buffer.buffer, event.key.utf8);
+
+	if (*event.key.utf8 == UTF8_RETURN || *event.key.utf8 == UTF8_NEWLINE) {
+		state->current_buffer.cursor_position.row++;
+		state->current_buffer.cursor_position.col = 0;
+	} else {
+		state->current_buffer.cursor_position.col += 1;
+	}
+}
+
+//@TODO handle this thing later
+mrm_internal void
+editor_handle_buffer_backspace(struct clk_EditorState *state)
+{
+	Buffer *const buffer = buffers[state->current_buffer.buffer];
+
+	if (buffer->gap_start == 0) {
+		return;
+	}
+
+	if (state->current_buffer.cursor_position.col == 0) {
+		if (state->current_buffer.cursor_position.row > 0) {
+			state->current_buffer.cursor_position.row--;
+			state->current_buffer.cursor_position.col =
+				get_row_length(state->current_buffer.buffer,
+					       state->current_buffer
+						       .cursor_position.row);
+		}
+	} else {
+		state->current_buffer.cursor_position.col--;
+	}
+
+	buffer_delete_utf8_char(state->current_buffer.buffer);
+}
+
+// @TODO hacky impl
+mrm_internal Bool
+is_typeable_character(struct clk_Event event)
+{
+	if (event.key.keysym == CLK_KEYSYM_NOT_FOUND) {
+		return TRUE;
+	}
+
+	return FALSE;
 }

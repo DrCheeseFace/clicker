@@ -33,8 +33,6 @@ render_frame(struct clk_Renderer *renderer, struct clk_EditorState *const state)
 		window_update_window_size(&renderer->clk_window);
 		draw_update_text_surface_to_window_size(renderer->clk_draw,
 							renderer->clk_window);
-
-		state->resize_required = FALSE;
 	}
 
 	if (state->debug_mode) {
@@ -83,44 +81,16 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 	size_t horizontal_offset = state.current_buffer.view_start_column;
 	ignore horizontal_offset;
 
-	// height of viewable area / height of font = num of rows
-	const size_t view_height = ((renderer->clk_window.window_h -
-				     state.current_buffer.frame_origin_y) /
-				    renderer->clk_draw.current_font_height) +
-				   1;
-
 	char *start_p =
 		buffer_get_ptr_of_line(state.current_buffer.buffer, start_row);
-	char *end_p = buffer_get_ptr_of_line(state.current_buffer.buffer,
-					     start_row + view_height);
+	char *end_p = buffer_get_ptr_of_line(
+		state.current_buffer.buffer,
+		start_row + state.current_buffer.view_height);
 
 	char *ptr = start_p;
 	Buffer *const buffer = buffers[state.current_buffer.buffer];
 
 	while (ptr < end_p) {
-		if (*ptr == UTF8_RETURN || *ptr == UTF8_NEWLINE) {
-			const char orig_char = *ptr;
-			*ptr = '\0';
-
-			if (start_p != ptr) {
-				draw_write_text(renderer->clk_draw, start_p,
-						NULL);
-			}
-
-			draw_position_x = left_limit;
-			draw_position_y =
-				draw_position_y +
-				renderer->clk_draw.current_font_height;
-			draw_move_cursor_to(renderer->clk_draw, draw_position_x,
-					    draw_position_y);
-
-			*ptr = orig_char;
-
-			buffer_seek_next_utf8(buffer, &ptr);
-			start_p = ptr;
-			continue;
-		}
-
 		// jump the gap, pull out into different loop so this doesnt have to be checked everytime?
 		if (ptr == buffer->text + buffer->gap_start) {
 			const char orig_char = *ptr;
@@ -141,6 +111,29 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 			*ptr = orig_char;
 
 			ptr = buffer->text + buffer->gap_end;
+			start_p = ptr;
+			continue;
+		}
+
+		if (*ptr == UTF8_RETURN || *ptr == UTF8_NEWLINE) {
+			const char orig_char = *ptr;
+			*ptr = '\0';
+
+			if (start_p != ptr) {
+				draw_write_text(renderer->clk_draw, start_p,
+						NULL);
+			}
+
+			draw_position_x = left_limit;
+			draw_position_y =
+				draw_position_y +
+				renderer->clk_draw.current_font_height;
+			draw_move_cursor_to(renderer->clk_draw, draw_position_x,
+					    draw_position_y);
+
+			*ptr = orig_char;
+
+			buffer_seek_next_utf8(buffer, &ptr);
 			start_p = ptr;
 			continue;
 		}

@@ -58,6 +58,7 @@ typedef struct {
 } Buffer;
 
 void debug_save_buffer_to_file(Buffer *buffer, const char *filepath);
+size_t get_row_length(BufferID buffer, size_t row);
 
 // -1 for the null terminator :(
 #define BUFFER_MAX_TEXT_BYTES_LENGTH(size) ((size) - sizeof(Buffer) - 1)
@@ -145,7 +146,9 @@ enum clk_Keysym {
 	CLK_KEYSYM_ARROW_LEFT,
 	CLK_KEYSYM_ARROW_RIGHT,
 	CLK_KEYSYM_BACKSPACE,
+	CLK_KEYSYM_SHIFT,
 	CLK_KEYSYM_DEBUG_BIND,
+	CLK_KEYSYM_ESCAPE,
 	CLK_KEYSYM_COUNT,
 	CLK_KEYSYM_NOT_FOUND,
 
@@ -281,6 +284,7 @@ struct clk_EditorState {
 
 	char *err_str;
 
+	// @TODO need to abstract this away later when dealing with multiple buffers bleh
 	struct {
 		BufferID buffer;
 
@@ -294,6 +298,7 @@ struct clk_EditorState {
 		} cursor_position;
 
 		size_t view_start_row;
+		size_t view_height; // number of visible rows
 		size_t view_start_column;
 
 	} current_buffer;

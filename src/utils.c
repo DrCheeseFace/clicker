@@ -7,8 +7,8 @@ global_variable const char *option_to_str[OPTION_FLAGS_COUNT] = {
 };
 
 const char *clk_keysym_to_string[CLK_KEYSYM_COUNT_] = {
-	"ARROW UP",  "ARROW DOWN", "ARROW LEFT", "ARROW RIGHT",
-	"BACKSPACE", "DEBUG_BIND", "____",	 "NOT FOUND"
+	"ARROW UP",   "ARROW DOWN", "ARROW LEFT", "ARROW RIGHT", "BACKSPACE",
+	"LEFT SHIFT", "ESCAPE",	    "DEBUG BIND", "____",	 "NOT FOUND"
 };
 
 void
@@ -94,4 +94,24 @@ debug_save_buffer_to_file(Buffer *buffer, const char *filepath)
 	fwrite(buffer, buffer->size, sizeof(char), dump_to);
 
 	fclose(dump_to);
+}
+
+size_t
+get_row_length(BufferID bufferid, size_t row)
+{
+	Buffer *const buffer = buffers[bufferid];
+
+	char *ptr = buffer_get_ptr_of_line(bufferid, row);
+
+	size_t col_count = 0;
+	while (ptr <
+	       buffer->text + BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size)) {
+		if (*ptr == UTF8_NEWLINE || *ptr == UTF8_RETURN) {
+			break;
+		}
+		buffer_seek_next_utf8(buffer, &ptr);
+		col_count++;
+	}
+
+	return col_count;
 }

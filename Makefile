@@ -129,3 +129,4 @@ record:
 
 -include $(ALL_TEST_OBJS:.o=.d)
 -include $(OBJ_SPACERS:.o=.d)
+-include $(ALL_MAIN_OBJS:.o=.d)
