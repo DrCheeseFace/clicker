@@ -153,8 +153,7 @@ buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row, size_t col,
 		p = buffer->text + buffer->gap_end;
 	}
 
-	while (row > 0 &&
-	       p < buffer->text + BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size)) {
+	while (row > 0) {
 		if (*p == UTF8_RETURN || *p == UTF8_NEWLINE) {
 			row--;
 		}
@@ -435,4 +434,25 @@ buffer_seek_next_utf8(Buffer *const buffer, char **p)
 		*p = buffer->text + buffer->gap_end;
 		return;
 	}
+}
+
+size_t
+buffer_get_max_row(const BufferID buffer_id)
+{
+	Buffer *const buffer = buffers[buffer_id];
+	size_t max_row = 0;
+
+	char *p = buffer->text;
+	if (buffer->gap_start == 0) {
+		p = buffer->text + buffer->gap_end;
+	}
+
+	while (p < buffer->text + BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size)) {
+		if (*p == UTF8_RETURN || *p == UTF8_NEWLINE) {
+			max_row++;
+		}
+		buffer_seek_next_utf8(buffer, &p);
+	}
+
+	return max_row;
 }

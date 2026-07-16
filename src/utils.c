@@ -91,7 +91,8 @@ debug_save_buffer_to_file(Buffer *buffer, const char *filepath)
 {
 	FILE *dump_to = fopen(filepath, "w+");
 
-	fwrite(buffer, buffer->size, sizeof(char), dump_to);
+	fwrite(buffer->text, BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size),
+	       sizeof(char), dump_to);
 
 	fclose(dump_to);
 }

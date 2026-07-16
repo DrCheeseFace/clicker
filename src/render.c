@@ -101,8 +101,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 				draw_write_text(renderer->clk_draw, start_p,
 						&extents);
 
-				draw_position_x =
-					left_limit + extents.x_advance;
+				draw_position_x += extents.x_advance;
 				draw_move_cursor_to(renderer->clk_draw,
 						    draw_position_x,
 						    draw_position_y);
@@ -118,9 +117,9 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 		if (*ptr == UTF8_TAB) {
 			const char orig_char = *ptr;
 			*ptr = '\0';
+			cairo_text_extents_t extents;
 
 			if (start_p != ptr) {
-				cairo_text_extents_t extents;
 				draw_write_text(renderer->clk_draw, start_p,
 						&extents);
 

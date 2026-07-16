@@ -116,6 +116,8 @@ void buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row,
 
 void buffer_seek_next_utf8(Buffer *const buffer, char **p);
 
+size_t buffer_get_max_row(const BufferID buffer_id);
+
 #define BUFFERS_GET_BUFFER_BY_ID(idx) (buffers[(idx)])
 
 //
