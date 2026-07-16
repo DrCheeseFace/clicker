@@ -36,6 +36,8 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 
 	state->err_str = NULL;
 
+	state->tab_spaces = 8;
+
 	state->current_buffer.font_size = 40;
 	state->current_buffer.frame_origin_x = 50;
 	state->current_buffer.frame_origin_y = 50;
@@ -174,7 +176,8 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 				size_t row_length = get_row_length(
 					state->current_buffer.buffer,
 					state->current_buffer.cursor_position
-						.row);
+						.row,
+					state->tab_spaces);
 				if (row_length <
 				    state->current_buffer.cursor_position.col) {
 					state->current_buffer.cursor_position
@@ -185,7 +188,8 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 					state->current_buffer.cursor_position
 						.row,
 					state->current_buffer.cursor_position
-						.col);
+						.col,
+					state->tab_spaces);
 			}
 
 			return;
@@ -196,7 +200,8 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 
 			size_t row_length = get_row_length(
 				state->current_buffer.buffer,
-				state->current_buffer.cursor_position.row);
+				state->current_buffer.cursor_position.row,
+				state->tab_spaces);
 			if (row_length <
 			    state->current_buffer.cursor_position.col) {
 				state->current_buffer.cursor_position.col =
@@ -206,7 +211,8 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 			buffer_move_gap_to_row_col(
 				state->current_buffer.buffer,
 				state->current_buffer.cursor_position.row,
-				state->current_buffer.cursor_position.col);
+				state->current_buffer.cursor_position.col,
+				state->tab_spaces);
 			return;
 		}
 
@@ -218,7 +224,8 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 					state->current_buffer.cursor_position
 						.row,
 					state->current_buffer.cursor_position
-						.col);
+						.col,
+					state->tab_spaces);
 			}
 			return;
 		}
@@ -226,7 +233,8 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 		case CLK_KEYSYM_ARROW_RIGHT: {
 			size_t row_length = get_row_length(
 				state->current_buffer.buffer,
-				state->current_buffer.cursor_position.row);
+				state->current_buffer.cursor_position.row,
+				state->tab_spaces);
 
 			if (state->current_buffer.cursor_position.col <
 			    row_length) {
@@ -236,7 +244,8 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 					state->current_buffer.cursor_position
 						.row,
 					state->current_buffer.cursor_position
-						.col);
+						.col,
+					state->tab_spaces);
 			}
 			return;
 		}
@@ -321,7 +330,8 @@ editor_click_within_current_buffer(struct clk_EditorState *state,
 	/* @TODO curos position row snap to highest row possible */
 	buffer_move_gap_to_row_col(state->current_buffer.buffer,
 				   state->current_buffer.cursor_position.row,
-				   state->current_buffer.cursor_position.col);
+				   state->current_buffer.cursor_position.col,
+				   state->tab_spaces);
 }
 
 mrm_internal void
@@ -334,11 +344,15 @@ editor_handle_buffer_text_input(struct clk_EditorState *state,
 		state->current_buffer.cursor_position.row++;
 		state->current_buffer.cursor_position.col = 0;
 	} else {
-		state->current_buffer.cursor_position.col += 1;
+		if (*event.key.utf8 == UTF8_TAB) {
+			state->current_buffer.cursor_position.col +=
+				state->tab_spaces;
+		} else {
+			state->current_buffer.cursor_position.col++;
+		}
 	}
 }
 
-//@TODO handle this thing later
 mrm_internal void
 editor_handle_buffer_backspace(struct clk_EditorState *state)
 {
@@ -348,19 +362,25 @@ editor_handle_buffer_backspace(struct clk_EditorState *state)
 		return;
 	}
 
+	buffer_delete_utf8_char(state->current_buffer.buffer);
+
 	if (state->current_buffer.cursor_position.col == 0) {
 		if (state->current_buffer.cursor_position.row > 0) {
 			state->current_buffer.cursor_position.row--;
 			state->current_buffer.cursor_position.col =
 				get_row_length(state->current_buffer.buffer,
 					       state->current_buffer
-						       .cursor_position.row);
+						       .cursor_position.row,
+					       state->tab_spaces);
 		}
 	} else {
-		state->current_buffer.cursor_position.col--;
+		if (*(buffer->text + buffer->gap_start) == UTF8_TAB) {
+			state->current_buffer.cursor_position.col -=
+				state->tab_spaces;
+		} else {
+			state->current_buffer.cursor_position.col--;
+		}
 	}
-
-	buffer_delete_utf8_char(state->current_buffer.buffer);
 }
 
 // @TODO hacky impl

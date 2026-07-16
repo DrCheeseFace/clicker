@@ -38,6 +38,7 @@ void utf8_seek_next(char **ptr);
 // @TODO make this hex?
 #define UTF8_RETURN '\n'
 #define UTF8_NEWLINE '\r'
+#define UTF8_TAB '\t'
 
 //
 // BUFFER
@@ -58,7 +59,7 @@ typedef struct {
 } Buffer;
 
 void debug_save_buffer_to_file(Buffer *buffer, const char *filepath);
-size_t get_row_length(BufferID buffer, size_t row);
+size_t get_row_length(BufferID bufferid, size_t row, uint8_t tab_spaces);
 
 // -1 for the null terminator :(
 #define BUFFER_MAX_TEXT_BYTES_LENGTH(size) ((size) - sizeof(Buffer) - 1)
@@ -111,7 +112,8 @@ void buffer_delete_utf8_char(BufferID buffer_id);
 void *buffer_get_ptr_of_line(BufferID buffer_id, size_t row);
 
 void buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row,
-				size_t col);
+				size_t col, size_t tab_spaces);
+
 void buffer_seek_next_utf8(Buffer *const buffer, char **p);
 
 #define BUFFERS_GET_BUFFER_BY_ID(idx) (buffers[(idx)])
@@ -283,6 +285,8 @@ struct clk_EditorState {
 	Bool resize_required;
 
 	char *err_str;
+
+	uint8_t tab_spaces;
 
 	// @TODO need to abstract this away later when dealing with multiple buffers bleh
 	struct {

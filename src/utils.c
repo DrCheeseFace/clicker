@@ -97,7 +97,7 @@ debug_save_buffer_to_file(Buffer *buffer, const char *filepath)
 }
 
 size_t
-get_row_length(BufferID bufferid, size_t row)
+get_row_length(BufferID bufferid, size_t row, uint8_t tab_spaces)
 {
 	Buffer *const buffer = buffers[bufferid];
 
@@ -109,8 +109,13 @@ get_row_length(BufferID bufferid, size_t row)
 		if (*ptr == UTF8_NEWLINE || *ptr == UTF8_RETURN) {
 			break;
 		}
+		if (*ptr == UTF8_TAB) {
+			col_count += tab_spaces;
+		} else {
+			col_count++;
+		}
+
 		buffer_seek_next_utf8(buffer, &ptr);
-		col_count++;
 	}
 
 	return col_count;

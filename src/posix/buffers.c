@@ -143,7 +143,8 @@ buffer_move_gap_to_utf8_idx(const BufferID buffer_id, const size_t char_idx)
 }
 
 void
-buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row, size_t col)
+buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row, size_t col,
+			   size_t tab_spaces)
 {
 	Buffer *const buffer = buffers[buffer_id];
 
@@ -165,8 +166,12 @@ buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row, size_t col)
 		if (*p == UTF8_RETURN || *p == UTF8_NEWLINE) {
 			break;
 		}
+		if (*p == UTF8_TAB) {
+			col -= tab_spaces;
+		} else {
+			col--;
+		}
 		buffer_seek_next_utf8(buffer, &p);
-		col--;
 	}
 
 	size_t gap_start;

@@ -115,6 +115,37 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 			continue;
 		}
 
+		if (*ptr == UTF8_TAB) {
+			const char orig_char = *ptr;
+			*ptr = '\0';
+
+			if (start_p != ptr) {
+				cairo_text_extents_t extents;
+				draw_write_text(renderer->clk_draw, start_p,
+						&extents);
+
+				draw_position_x +=
+					extents.x_advance +
+					(state.tab_spaces *
+					 renderer->clk_draw
+						 .current_font_max_x_advance);
+
+			} else {
+				draw_position_x +=
+					(state.tab_spaces *
+					 renderer->clk_draw
+						 .current_font_max_x_advance);
+			}
+
+			draw_move_cursor_to(renderer->clk_draw, draw_position_x,
+					    draw_position_y);
+			*ptr = orig_char;
+
+			buffer_seek_next_utf8(buffer, &ptr);
+			start_p = ptr;
+			continue;
+		}
+
 		if (*ptr == UTF8_RETURN || *ptr == UTF8_NEWLINE) {
 			const char orig_char = *ptr;
 			*ptr = '\0';
