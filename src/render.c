@@ -65,28 +65,25 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 	draw_set_font_color(renderer->clk_draw, 1, 1, 1);
 	draw_update_font_extents(&renderer->clk_draw);
 
-	// DO NOT TRY AT HOME
-	size_t start_row = state.current_buffer.view_start_row;
-	double cursor_draw_position_x;
-	double cursor_draw_position_y;
-	if (state.current_buffer.view_start_row != 0) {
-		start_row--;
-		cursor_draw_position_x = state.current_buffer.frame_origin_x;
-		cursor_draw_position_y = state.current_buffer.frame_origin_y;
+	size_t start_row;
+	double draw_position_x = state.current_buffer.frame_origin_x;
+	double draw_position_y = state.current_buffer.frame_origin_y;
+	if (state.current_buffer.view_start_row == 0) {
+		start_row = state.current_buffer.view_start_row;
+		draw_position_y += renderer->clk_draw.current_font_ascent;
 	} else {
-		cursor_draw_position_x = state.current_buffer.frame_origin_x;
-		cursor_draw_position_y = state.current_buffer.frame_origin_y +
-					 renderer->clk_draw.current_font_ascent;
+		// if not at top, render row above view_start_row as well
+		start_row = state.current_buffer.view_start_row - 1;
 	}
 
-	const double left_limit = cursor_draw_position_x;
-	draw_move_cursor_to(renderer->clk_draw, cursor_draw_position_x,
-			    cursor_draw_position_y);
+	const double left_limit = draw_position_x;
+	draw_move_cursor_to(renderer->clk_draw, draw_position_x,
+			    draw_position_y);
 
-	cairo_text_extents_t extents;
 	size_t horizontal_offset = state.current_buffer.view_start_column;
 	ignore horizontal_offset;
 
+	// height of viewable area / height of font = num of rows
 	const size_t view_height = ((renderer->clk_window.window_h -
 				     state.current_buffer.frame_origin_y) /
 				    renderer->clk_draw.current_font_height) +
@@ -102,21 +99,20 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 
 	while (ptr < end_p) {
 		if (*ptr == UTF8_RETURN || *ptr == UTF8_NEWLINE) {
-			char orig_char = *ptr;
+			const char orig_char = *ptr;
 			*ptr = '\0';
 
 			if (start_p != ptr) {
 				draw_write_text(renderer->clk_draw, start_p,
-						&extents);
+						NULL);
 			}
 
-			cursor_draw_position_x = left_limit;
-			cursor_draw_position_y =
-				cursor_draw_position_y +
+			draw_position_x = left_limit;
+			draw_position_y =
+				draw_position_y +
 				renderer->clk_draw.current_font_height;
-			draw_move_cursor_to(renderer->clk_draw,
-					    cursor_draw_position_x,
-					    cursor_draw_position_y);
+			draw_move_cursor_to(renderer->clk_draw, draw_position_x,
+					    draw_position_y);
 
 			*ptr = orig_char;
 
@@ -125,20 +121,21 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 			continue;
 		}
 
-		// need to jump the gap
+		// jump the gap, pull out into different loop so this doesnt have to be checked everytime?
 		if (ptr == buffer->text + buffer->gap_start) {
-			char orig_char = *ptr;
+			const char orig_char = *ptr;
 			*ptr = '\0';
 
 			if (start_p != ptr) {
+				cairo_text_extents_t extents;
 				draw_write_text(renderer->clk_draw, start_p,
 						&extents);
 
-				cursor_draw_position_x =
+				draw_position_x =
 					left_limit + extents.x_advance;
 				draw_move_cursor_to(renderer->clk_draw,
-						    cursor_draw_position_x,
-						    cursor_draw_position_y);
+						    draw_position_x,
+						    draw_position_y);
 			}
 
 			*ptr = orig_char;
@@ -153,10 +150,10 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 
 	// if text doesnt end on a newline
 	if (start_p < end_p && start_p != ptr) {
-		char orig_char = *ptr;
+		const char orig_char = *ptr;
 
 		*ptr = '\0';
-		draw_write_text(renderer->clk_draw, start_p, &extents);
+		draw_write_text(renderer->clk_draw, start_p, NULL);
 		*ptr = orig_char;
 	}
 

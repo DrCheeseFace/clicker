@@ -355,7 +355,6 @@ buffer_delete_utf8_char(BufferID buffer_id)
 			*(buffer->text + buffer->gap_start))) {
 			buffer->gap_start--;
 		}
-
 	}
 }
 
