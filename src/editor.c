@@ -23,6 +23,9 @@ mrm_internal void editor_handle_buffer_backspace(struct clk_EditorState *state);
 
 mrm_internal Bool is_typeable_character(struct clk_Event event);
 
+mrm_internal void editor_frame_start(struct clk_EditorState *state);
+mrm_internal void editor_frame_end(struct clk_EditorState *state);
+
 void
 editor_init(struct clk_EditorState *state, const char *filepath)
 {
@@ -38,12 +41,15 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 
 	state->tab_spaces = 8;
 
+	time_get_time(&state->last_tick);
+	state->target_frame_ms = 16;
+
 	state->current_buffer.font_size = 40;
 	state->current_buffer.frame_origin_x = 50;
 	state->current_buffer.frame_origin_y = 50;
 
-	state->current_buffer.cursor_position.row = 0;
-	state->current_buffer.cursor_position.col = 0;
+	state->current_buffer.cursor.row = 0;
+	state->current_buffer.cursor.col = 0;
 
 	state->current_buffer.view_start_row = 0;
 	state->current_buffer.view_start_column = 0;
@@ -81,6 +87,8 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 void
 editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 {
+	editor_frame_start(state);
+
 	if (state->debug_mode) {
 		if (event.key.keysym == CLK_KEYSYM_DEBUG_BIND) {
 			debug_save_buffer_to_file(
@@ -92,7 +100,7 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 
 	state->resize_required = event.type == CLK_WINDOW_EVENT_TYPE_RESIZEREQ;
 
-	state->current_buffer.view_height =
+	state->current_buffer.view_row_count =
 		((clicker_renderer.clk_window.window_h -
 		  state->current_buffer.frame_origin_y) /
 		 clicker_renderer.clk_draw.current_font_height) +
@@ -103,6 +111,8 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 	}
 
 	editor_handle_current_buffer_input(state, event);
+
+	editor_frame_end(state);
 }
 
 void
@@ -171,24 +181,21 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 		}
 
 		case CLK_KEYSYM_ARROW_UP: {
-			if (state->current_buffer.cursor_position.row > 0) {
-				state->current_buffer.cursor_position.row--;
+			if (state->current_buffer.cursor.row > 0) {
+				state->current_buffer.cursor.row--;
 				size_t row_length = get_row_length(
 					state->current_buffer.buffer,
-					state->current_buffer.cursor_position
-						.row,
+					state->current_buffer.cursor.row,
 					state->tab_spaces);
 				if (row_length <
-				    state->current_buffer.cursor_position.col) {
-					state->current_buffer.cursor_position
-						.col = row_length;
+				    state->current_buffer.cursor.col) {
+					state->current_buffer.cursor.col =
+						row_length;
 				}
 				buffer_move_gap_to_row_col(
 					state->current_buffer.buffer,
-					state->current_buffer.cursor_position
-						.row,
-					state->current_buffer.cursor_position
-						.col,
+					state->current_buffer.cursor.row,
+					state->current_buffer.cursor.col,
 					state->tab_spaces);
 			}
 
@@ -199,27 +206,23 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 			size_t max_row = buffer_get_max_row(
 				state->current_buffer.buffer);
 
-			if (state->current_buffer.cursor_position.row <
-			    max_row) {
-				state->current_buffer.cursor_position.row++;
+			if (state->current_buffer.cursor.row < max_row) {
+				state->current_buffer.cursor.row++;
 
 				size_t row_length = get_row_length(
 					state->current_buffer.buffer,
-					state->current_buffer.cursor_position
-						.row,
+					state->current_buffer.cursor.row,
 					state->tab_spaces);
 				if (row_length <
-				    state->current_buffer.cursor_position.col) {
-					state->current_buffer.cursor_position
-						.col = row_length;
+				    state->current_buffer.cursor.col) {
+					state->current_buffer.cursor.col =
+						row_length;
 				}
 
 				buffer_move_gap_to_row_col(
 					state->current_buffer.buffer,
-					state->current_buffer.cursor_position
-						.row,
-					state->current_buffer.cursor_position
-						.col,
+					state->current_buffer.cursor.row,
+					state->current_buffer.cursor.col,
 					state->tab_spaces);
 			}
 			return;
@@ -228,23 +231,20 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 		case CLK_KEYSYM_ARROW_LEFT: {
 			Buffer *const buffer =
 				buffers[state->current_buffer.buffer];
-			if (state->current_buffer.cursor_position.col > 0) {
+			if (state->current_buffer.cursor.col > 0) {
 				if (buffer->gap_start > 0 &&
 				    *(buffer->text + buffer->gap_start - 1) ==
 					    UTF8_TAB) {
-					state->current_buffer.cursor_position
-						.col -= state->tab_spaces;
+					state->current_buffer.cursor.col -=
+						state->tab_spaces;
 				} else {
-					state->current_buffer.cursor_position
-						.col--;
+					state->current_buffer.cursor.col--;
 				}
 
 				buffer_move_gap_to_row_col(
 					state->current_buffer.buffer,
-					state->current_buffer.cursor_position
-						.row,
-					state->current_buffer.cursor_position
-						.col,
+					state->current_buffer.cursor.row,
+					state->current_buffer.cursor.col,
 					state->tab_spaces);
 			}
 			return;
@@ -253,31 +253,27 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 		case CLK_KEYSYM_ARROW_RIGHT: {
 			Buffer *const buffer =
 				buffers[state->current_buffer.buffer];
-			size_t row_length = get_row_length(
-				state->current_buffer.buffer,
-				state->current_buffer.cursor_position.row,
-				state->tab_spaces);
+			size_t row_length =
+				get_row_length(state->current_buffer.buffer,
+					       state->current_buffer.cursor.row,
+					       state->tab_spaces);
 
-			if (state->current_buffer.cursor_position.col <
-			    row_length) {
+			if (state->current_buffer.cursor.col < row_length) {
 				if (buffer->gap_end <
 					    BUFFER_MAX_TEXT_BYTES_LENGTH(
 						    buffer->size) &&
 				    *(buffer->text + buffer->gap_end) ==
 					    UTF8_TAB) {
-					state->current_buffer.cursor_position
-						.col += state->tab_spaces;
+					state->current_buffer.cursor.col +=
+						state->tab_spaces;
 				} else {
-					state->current_buffer.cursor_position
-						.col++;
+					state->current_buffer.cursor.col++;
 				}
 
 				buffer_move_gap_to_row_col(
 					state->current_buffer.buffer,
-					state->current_buffer.cursor_position
-						.row,
-					state->current_buffer.cursor_position
-						.col,
+					state->current_buffer.cursor.row,
+					state->current_buffer.cursor.col,
 					state->tab_spaces);
 			}
 			return;
@@ -335,19 +331,18 @@ editor_click_within_current_buffer(struct clk_EditorState *state,
 	const double font_width =
 		clicker_renderer.clk_draw.current_font_max_x_advance;
 
-	state->current_buffer.cursor_position.col =
+	state->current_buffer.cursor.col =
 		floorf((float)mouse_x_pos - origin_x) / (float)font_width;
-	state->current_buffer.cursor_position.row =
+	state->current_buffer.cursor.row =
 		floorf((float)mouse_y_pos - origin_y) / (float)font_height;
 
 	size_t max_row = buffer_get_max_row(state->current_buffer.buffer);
-	if (state->current_buffer.cursor_position.row > max_row) {
-		state->current_buffer.cursor_position.row = max_row;
+	if (state->current_buffer.cursor.row > max_row) {
+		state->current_buffer.cursor.row = max_row;
 	}
 
-	char *ptr = buffer_get_ptr_of_line(
-		state->current_buffer.buffer,
-		state->current_buffer.cursor_position.row);
+	char *ptr = buffer_get_ptr_of_line(state->current_buffer.buffer,
+					   state->current_buffer.cursor.row);
 
 	Buffer *const buffer = buffers[state->current_buffer.buffer];
 
@@ -361,13 +356,13 @@ editor_click_within_current_buffer(struct clk_EditorState *state,
 		col_count++;
 	}
 
-	if (state->current_buffer.cursor_position.col > col_count) {
-		state->current_buffer.cursor_position.col = col_count;
+	if (state->current_buffer.cursor.col > col_count) {
+		state->current_buffer.cursor.col = col_count;
 	}
 
 	buffer_move_gap_to_row_col(state->current_buffer.buffer,
-				   state->current_buffer.cursor_position.row,
-				   state->current_buffer.cursor_position.col,
+				   state->current_buffer.cursor.row,
+				   state->current_buffer.cursor.col,
 				   state->tab_spaces);
 }
 
@@ -378,14 +373,13 @@ editor_handle_buffer_text_input(struct clk_EditorState *state,
 	buffer_insert_utf8(state->current_buffer.buffer, event.key.utf8);
 
 	if (*event.key.utf8 == UTF8_RETURN || *event.key.utf8 == UTF8_NEWLINE) {
-		state->current_buffer.cursor_position.row++;
-		state->current_buffer.cursor_position.col = 0;
+		state->current_buffer.cursor.row++;
+		state->current_buffer.cursor.col = 0;
 	} else {
 		if (*event.key.utf8 == UTF8_TAB) {
-			state->current_buffer.cursor_position.col +=
-				state->tab_spaces;
+			state->current_buffer.cursor.col += state->tab_spaces;
 		} else {
-			state->current_buffer.cursor_position.col++;
+			state->current_buffer.cursor.col++;
 		}
 	}
 }
@@ -401,21 +395,19 @@ editor_handle_buffer_backspace(struct clk_EditorState *state)
 
 	buffer_delete_utf8_char(state->current_buffer.buffer);
 
-	if (state->current_buffer.cursor_position.col == 0) {
-		if (state->current_buffer.cursor_position.row > 0) {
-			state->current_buffer.cursor_position.row--;
-			state->current_buffer.cursor_position.col =
+	if (state->current_buffer.cursor.col == 0) {
+		if (state->current_buffer.cursor.row > 0) {
+			state->current_buffer.cursor.row--;
+			state->current_buffer.cursor.col =
 				get_row_length(state->current_buffer.buffer,
-					       state->current_buffer
-						       .cursor_position.row,
+					       state->current_buffer.cursor.row,
 					       state->tab_spaces);
 		}
 	} else {
 		if (*(buffer->text + buffer->gap_start) == UTF8_TAB) {
-			state->current_buffer.cursor_position.col -=
-				state->tab_spaces;
+			state->current_buffer.cursor.col -= state->tab_spaces;
 		} else {
-			state->current_buffer.cursor_position.col--;
+			state->current_buffer.cursor.col--;
 		}
 	}
 }
@@ -424,9 +416,33 @@ editor_handle_buffer_backspace(struct clk_EditorState *state)
 mrm_internal Bool
 is_typeable_character(struct clk_Event event)
 {
-	if (event.key.keysym == CLK_KEYSYM_NOT_FOUND) {
+	if (event.key.keysym == CLK_KEYSYM_NOT_FOUND && !event.key.ctrl_down) {
 		return TRUE;
 	}
 
 	return FALSE;
+}
+
+mrm_internal void
+editor_frame_start(struct clk_EditorState *state)
+{
+	time_get_time(&state->last_tick);
+}
+
+mrm_internal void
+editor_frame_end(struct clk_EditorState *state)
+{
+	struct clk_Time current_time;
+	time_get_time(&current_time);
+
+	uint64_t elapsed_ns =
+		(current_time.s - state->last_tick.s) * 1000000000ULL +
+		current_time.ns - state->last_tick.ns;
+
+	uint64_t target_ns = (uint64_t)state->target_frame_ms * 1000000ULL;
+
+	if (elapsed_ns < target_ns) {
+		uint64_t remaining_ns = target_ns - elapsed_ns;
+		time_sleep_us((uint32_t)(remaining_ns / 1000ULL));
+	}
 }

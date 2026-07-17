@@ -46,6 +46,7 @@ SRC_LIB        = src/main.c \
 		 src/x11/window.c \
 		 src/render.c \
 		 src/editor.c \
+		 src/posix/time.c \
 		 src/x11/draw.c
 
 SRC_TEST_MAIN  = test/test.c \
@@ -54,6 +55,7 @@ SRC_TEST_MAIN  = test/test.c \
 		 src/x11/window.c \
 		 src/render.c \
 		 src/editor.c \
+		 src/posix/time.c \
 		 src/x11/draw.c
 
 SRC_MR_UTILS   = src/mr_utils/src/mrd_debug.c \

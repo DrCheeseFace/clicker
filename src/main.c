@@ -1,8 +1,6 @@
 #include "./internal.h"
 #include <mr_utils.h>
-#include <stdint.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 struct clk_Event clicker_event = { 0 };
 struct clk_Renderer clicker_renderer = { 0 };

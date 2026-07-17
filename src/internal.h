@@ -18,7 +18,7 @@
 #define LICENSE                                                                \
 	"BSD 3-Clause License\n"                                               \
 	"Copyright (c) 2026, Tharun Tilakumara\n"                              \
-	"https://opensource.org/license/BSD-2-clause\n"                        \
+	"https://opensource.org/license/BSD-3-clause\n"                        \
 	"\nWritten by Tharun Tilakumara\n"
 
 enum OptionFlags {
@@ -39,6 +39,20 @@ void utf8_seek_next(char **ptr);
 #define UTF8_RETURN '\n'
 #define UTF8_NEWLINE '\r'
 #define UTF8_TAB '\t'
+
+//
+// TIME
+//
+
+struct clk_Time {
+	uint64_t s;
+	uint64_t ns;
+};
+
+void time_get_time(struct clk_Time *time);
+
+// microsecond sleep
+void time_sleep_us(uint32_t ms);
 
 //
 // BUFFER
@@ -150,7 +164,8 @@ enum clk_Keysym {
 	CLK_KEYSYM_ARROW_LEFT,
 	CLK_KEYSYM_ARROW_RIGHT,
 	CLK_KEYSYM_BACKSPACE,
-	CLK_KEYSYM_SHIFT,
+	CLK_KEYSYM_SHIFT_LEFT,
+	CLK_KEYSYM_CTRL_LEFT,
 	CLK_KEYSYM_DEBUG_BIND,
 	CLK_KEYSYM_ESCAPE,
 	CLK_KEYSYM_COUNT,
@@ -196,6 +211,7 @@ int window_free(struct clk_Window window);
 
 void window_update_window_size(struct clk_Window *window);
 
+// returns 1 if event occured
 void window_pol_event(void);
 
 void window_clear(struct clk_Window window);
@@ -289,6 +305,8 @@ struct clk_EditorState {
 	char *err_str;
 
 	uint8_t tab_spaces;
+	struct clk_Time last_tick;
+	uint8_t target_frame_ms;
 
 	// @TODO need to abstract this away later when dealing with multiple buffers bleh
 	struct {
@@ -301,10 +319,10 @@ struct clk_EditorState {
 		struct {
 			size_t row;
 			size_t col;
-		} cursor_position;
+		} cursor;
 
 		size_t view_start_row;
-		size_t view_height; // number of visible rows
+		size_t view_row_count; // number of visible rows
 		size_t view_start_column;
 
 	} current_buffer;

@@ -85,7 +85,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 		buffer_get_ptr_of_line(state.current_buffer.buffer, start_row);
 	char *end_p = buffer_get_ptr_of_line(
 		state.current_buffer.buffer,
-		start_row + state.current_buffer.view_height);
+		start_row + state.current_buffer.view_row_count);
 
 	char *ptr = start_p;
 	Buffer *const buffer = buffers[state.current_buffer.buffer];
@@ -189,10 +189,10 @@ mrm_internal void
 render_text_buffer_cursor(struct clk_Draw clk_draw,
 			  struct clk_EditorState state)
 {
-	const size_t relative_row = state.current_buffer.cursor_position.row -
+	const size_t relative_row = state.current_buffer.cursor.row -
 				    state.current_buffer.view_start_row;
 
-	const size_t relative_col = state.current_buffer.cursor_position.col;
+	const size_t relative_col = state.current_buffer.cursor.col;
 
 	const size_t origin_y = state.current_buffer.frame_origin_y +
 				(relative_row * clk_draw.current_font_height);
@@ -214,6 +214,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 	char debug_event_snack_text[256];
 
 	snprintf(debug_event_snack_text, sizeof(debug_event_snack_text),
+		 "time: %lu:%lu \n"
 		 "eventtype: %d \n"
 		 "keysym: %s \n"
 		 "utf8: %s \n"
@@ -225,6 +226,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 "text_len: %zu\n"
 		 "cursor_row: %zu \n"
 		 "cursor_col: %zu \n",
+		 clicker_state.last_tick.s, clicker_state.last_tick.ns,
 		 clicker_event.type,
 		 clk_keysym_to_string[clicker_event.key.keysym],
 		 clicker_event.key.utf8,
@@ -233,8 +235,8 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 clicker_event.mouse.x, clicker_event.mouse.y,
 		 (size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
 			  (buffers[0]->gap_end - buffers[0]->gap_start)),
-		 clicker_state.current_buffer.cursor_position.row,
-		 clicker_state.current_buffer.cursor_position.col);
+		 clicker_state.current_buffer.cursor.row,
+		 clicker_state.current_buffer.cursor.col);
 
 	draw_set_font_size(renderer.clk_draw, 20.0f);
 	draw_set_font_color(renderer.clk_draw, 1, 1, 1);

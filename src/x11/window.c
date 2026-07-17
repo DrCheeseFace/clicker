@@ -6,8 +6,8 @@
 #include <string.h>
 
 const XID x11_keycode_to_clk_keysym_map[CLK_KEYSYM_COUNT] = {
-	XK_Up,	      XK_Down,	  XK_Left,   XK_Right,
-	XK_BackSpace, XK_Shift_L, XK_Escape, XK_bar
+	XK_Up,	    XK_Down,	  XK_Left,   XK_Right, XK_BackSpace,
+	XK_Shift_L, XK_Control_L, XK_Escape, XK_bar
 };
 
 mrm_internal enum clk_Keysym
@@ -106,6 +106,10 @@ window_pol_event(void)
 {
 	struct x11_Window *const x11_window =
 		clicker_renderer.clk_window.window_ctx;
+
+	if (XPending(x11_window->main_display) == 0) {
+		return;
+	}
 
 	XEvent GeneralEvent = { 0 };
 	XNextEvent(x11_window->main_display, &GeneralEvent);
@@ -206,6 +210,8 @@ window_pol_event(void)
 	default:
 		break;
 	}
+
+	return;
 }
 
 void
