@@ -35,7 +35,7 @@ main(int argc, char **argv)
 
 		editor_simulate(&clicker_state, clicker_event);
 
-		render_frame(&clicker_renderer, &clicker_state);
+		render_frame(&clicker_renderer, clicker_state);
 
 		editor_frame_end(&clicker_state);
 	}

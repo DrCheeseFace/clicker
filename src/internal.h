@@ -294,7 +294,7 @@ void render_init(struct clk_Renderer *const renderer, int window_x,
 
 void render_free(struct clk_Renderer *renderer);
 
-void render_frame(struct clk_Renderer *renderer, struct clk_EditorState *state);
+void render_frame(struct clk_Renderer *renderer, struct clk_EditorState state);
 
 //
 // EDITOR

@@ -25,21 +25,21 @@ render_free(struct clk_Renderer *renderer)
 }
 
 void
-render_frame(struct clk_Renderer *renderer, struct clk_EditorState *const state)
+render_frame(struct clk_Renderer *renderer, struct clk_EditorState state)
 {
 	window_clear(renderer->clk_window);
 
-	if (state->resize_required) {
+	if (state.resize_required) {
 		window_update_window_size(&renderer->clk_window);
 		draw_update_text_surface_to_window_size(renderer->clk_draw,
 							renderer->clk_window);
 	}
 
-	if (state->debug_mode) {
+	if (state.debug_mode) {
 		render_debug_draw_snack(*renderer);
 	}
 
-	render_text_buffer(renderer, *state);
+	render_text_buffer(renderer, state);
 
 	draw_flush(renderer->clk_draw);
 	window_flush_display(renderer->clk_window);
