@@ -347,4 +347,8 @@ void editor_set_err_msg(struct clk_EditorState *state, const char *err_msg,
 void editor_fatal(struct clk_EditorState *state, const char *err_msg,
 		  const char *filename, int line_number);
 
+void editor_frame_start(struct clk_EditorState *state);
+
+void editor_frame_end(struct clk_EditorState *state);
+
 #endif

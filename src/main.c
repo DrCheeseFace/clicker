@@ -29,11 +29,15 @@ main(int argc, char **argv)
 	editor_init(&clicker_state, NULL);
 
 	while (clicker_state.is_running) {
+		editor_frame_start(&clicker_state);
+
 		window_pol_event();
 
 		editor_simulate(&clicker_state, clicker_event);
 
 		render_frame(&clicker_renderer, &clicker_state);
+
+		editor_frame_end(&clicker_state);
 	}
 
 	editor_free(&clicker_state);

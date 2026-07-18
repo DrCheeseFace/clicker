@@ -25,10 +25,6 @@ mrm_internal Bool is_typeable_character(struct clk_Event event);
 
 mrm_internal void editor_blink_cursor(struct clk_EditorState *state);
 
-mrm_internal void editor_frame_start(struct clk_EditorState *state);
-
-mrm_internal void editor_frame_end(struct clk_EditorState *state);
-
 mrm_internal void editor_set_cursor_position(struct clk_EditorState *state,
 					     uint16_t row, uint16_t col);
 
@@ -93,9 +89,6 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 void
 editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 {
-	// @TODO where should the start and end frame go
-	editor_frame_start(state);
-
 	if (state->debug_mode) {
 		if (event.key.keysym == CLK_KEYSYM_DEBUG_BIND) {
 			debug_save_buffer_to_file(
@@ -120,8 +113,6 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 	editor_handle_current_buffer_input(state, event);
 
 	editor_blink_cursor(state);
-
-	editor_frame_end(state);
 }
 
 void
@@ -162,6 +153,30 @@ editor_set_err_msg(struct clk_EditorState *state, const char *fmt, ...)
 
 	if (state->debug_mode) {
 		exit(1);
+	}
+}
+
+void
+editor_frame_start(struct clk_EditorState *state)
+{
+	time_get_time(&state->last_tick);
+}
+
+void
+editor_frame_end(struct clk_EditorState *state)
+{
+	struct clk_Time current_time;
+	time_get_time(&current_time);
+
+	uint64_t elapsed_ns =
+		(current_time.s - state->last_tick.s) * 1000000000ULL +
+		current_time.ns - state->last_tick.ns;
+
+	uint64_t target_ns = (uint64_t)state->target_frame_ms * 1000000ULL;
+
+	if (elapsed_ns < target_ns) {
+		uint64_t remaining_ns = target_ns - elapsed_ns;
+		time_sleep_us((uint32_t)(remaining_ns / 1000ULL));
 	}
 }
 
@@ -502,29 +517,5 @@ editor_blink_cursor(struct clk_EditorState *state)
 		last_is_visible_toggle = state->last_tick;
 		state->current_buffer.cursor.is_visible =
 			!state->current_buffer.cursor.is_visible;
-	}
-}
-
-mrm_internal void
-editor_frame_start(struct clk_EditorState *state)
-{
-	time_get_time(&state->last_tick);
-}
-
-mrm_internal void
-editor_frame_end(struct clk_EditorState *state)
-{
-	struct clk_Time current_time;
-	time_get_time(&current_time);
-
-	uint64_t elapsed_ns =
-		(current_time.s - state->last_tick.s) * 1000000000ULL +
-		current_time.ns - state->last_tick.ns;
-
-	uint64_t target_ns = (uint64_t)state->target_frame_ms * 1000000ULL;
-
-	if (elapsed_ns < target_ns) {
-		uint64_t remaining_ns = target_ns - elapsed_ns;
-		time_sleep_us((uint32_t)(remaining_ns / 1000ULL));
 	}
 }
