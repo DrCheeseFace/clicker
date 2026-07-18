@@ -189,6 +189,9 @@ mrm_internal void
 render_text_buffer_cursor(struct clk_Draw clk_draw,
 			  struct clk_EditorState state)
 {
+	if (!state.current_buffer.cursor.is_visible)
+		return;
+
 	const size_t relative_row = state.current_buffer.cursor.row -
 				    state.current_buffer.view_start_row;
 

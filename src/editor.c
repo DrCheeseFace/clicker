@@ -23,8 +23,14 @@ mrm_internal void editor_handle_buffer_backspace(struct clk_EditorState *state);
 
 mrm_internal Bool is_typeable_character(struct clk_Event event);
 
+mrm_internal void editor_blink_cursor(struct clk_EditorState *state);
+
 mrm_internal void editor_frame_start(struct clk_EditorState *state);
+
 mrm_internal void editor_frame_end(struct clk_EditorState *state);
+
+mrm_internal void editor_set_cursor_position(struct clk_EditorState *state,
+					     uint16_t row, uint16_t col);
 
 void
 editor_init(struct clk_EditorState *state, const char *filepath)
@@ -48,8 +54,8 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 	state->current_buffer.frame_origin_x = 50;
 	state->current_buffer.frame_origin_y = 50;
 
-	state->current_buffer.cursor.row = 0;
-	state->current_buffer.cursor.col = 0;
+	state->current_buffer.cursor.is_visible = TRUE;
+	editor_set_cursor_position(state, 0, 0);
 
 	state->current_buffer.view_start_row = 0;
 	state->current_buffer.view_start_column = 0;
@@ -87,6 +93,7 @@ editor_init(struct clk_EditorState *state, const char *filepath)
 void
 editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 {
+	// @TODO where should the start and end frame go
 	editor_frame_start(state);
 
 	if (state->debug_mode) {
@@ -111,6 +118,8 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 	}
 
 	editor_handle_current_buffer_input(state, event);
+
+	editor_blink_cursor(state);
 
 	editor_frame_end(state);
 }
@@ -169,6 +178,7 @@ editor_fatal(struct clk_EditorState *state, const char *err_msg,
 	}
 }
 
+// @TODO refactr this hoe
 mrm_internal void
 editor_handle_current_buffer_input(struct clk_EditorState *state,
 				   struct clk_Event event)
@@ -182,16 +192,23 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 
 		case CLK_KEYSYM_ARROW_UP: {
 			if (state->current_buffer.cursor.row > 0) {
-				state->current_buffer.cursor.row--;
+				editor_set_cursor_position(
+					state,
+					state->current_buffer.cursor.row - 1,
+					state->current_buffer.cursor.col);
+
 				size_t row_length = get_row_length(
 					state->current_buffer.buffer,
 					state->current_buffer.cursor.row,
 					state->tab_spaces);
 				if (row_length <
 				    state->current_buffer.cursor.col) {
-					state->current_buffer.cursor.col =
-						row_length;
+					editor_set_cursor_position(
+						state,
+						state->current_buffer.cursor.row,
+						row_length);
 				}
+
 				buffer_move_gap_to_row_col(
 					state->current_buffer.buffer,
 					state->current_buffer.cursor.row,
@@ -207,7 +224,10 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 				state->current_buffer.buffer);
 
 			if (state->current_buffer.cursor.row < max_row) {
-				state->current_buffer.cursor.row++;
+				editor_set_cursor_position(
+					state,
+					state->current_buffer.cursor.row + 1,
+					state->current_buffer.cursor.col);
 
 				size_t row_length = get_row_length(
 					state->current_buffer.buffer,
@@ -215,8 +235,10 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 					state->tab_spaces);
 				if (row_length <
 				    state->current_buffer.cursor.col) {
-					state->current_buffer.cursor.col =
-						row_length;
+					editor_set_cursor_position(
+						state,
+						state->current_buffer.cursor.row,
+						row_length);
 				}
 
 				buffer_move_gap_to_row_col(
@@ -235,10 +257,18 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 				if (buffer->gap_start > 0 &&
 				    *(buffer->text + buffer->gap_start - 1) ==
 					    UTF8_TAB) {
-					state->current_buffer.cursor.col -=
-						state->tab_spaces;
+					editor_set_cursor_position(
+						state,
+						state->current_buffer.cursor.row,
+						state->current_buffer.cursor.col -
+							state->tab_spaces);
+
 				} else {
-					state->current_buffer.cursor.col--;
+					editor_set_cursor_position(
+						state,
+						state->current_buffer.cursor.row,
+						state->current_buffer.cursor.col -
+							1);
 				}
 
 				buffer_move_gap_to_row_col(
@@ -264,10 +294,18 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 						    buffer->size) &&
 				    *(buffer->text + buffer->gap_end) ==
 					    UTF8_TAB) {
-					state->current_buffer.cursor.col +=
-						state->tab_spaces;
+					editor_set_cursor_position(
+						state,
+						state->current_buffer.cursor.row,
+						state->current_buffer.cursor.col +
+							state->tab_spaces);
+
 				} else {
-					state->current_buffer.cursor.col++;
+					editor_set_cursor_position(
+						state,
+						state->current_buffer.cursor.row,
+						state->current_buffer.cursor.col +
+							1);
 				}
 
 				buffer_move_gap_to_row_col(
@@ -338,7 +376,8 @@ editor_click_within_current_buffer(struct clk_EditorState *state,
 
 	size_t max_row = buffer_get_max_row(state->current_buffer.buffer);
 	if (state->current_buffer.cursor.row > max_row) {
-		state->current_buffer.cursor.row = max_row;
+		editor_set_cursor_position(state, max_row,
+					   state->current_buffer.cursor.col);
 	}
 
 	char *ptr = buffer_get_ptr_of_line(state->current_buffer.buffer,
@@ -357,7 +396,8 @@ editor_click_within_current_buffer(struct clk_EditorState *state,
 	}
 
 	if (state->current_buffer.cursor.col > col_count) {
-		state->current_buffer.cursor.col = col_count;
+		editor_set_cursor_position(
+			state, state->current_buffer.cursor.row, col_count);
 	}
 
 	buffer_move_gap_to_row_col(state->current_buffer.buffer,
@@ -373,13 +413,18 @@ editor_handle_buffer_text_input(struct clk_EditorState *state,
 	buffer_insert_utf8(state->current_buffer.buffer, event.key.utf8);
 
 	if (*event.key.utf8 == UTF8_RETURN || *event.key.utf8 == UTF8_NEWLINE) {
-		state->current_buffer.cursor.row++;
-		state->current_buffer.cursor.col = 0;
+		editor_set_cursor_position(
+			state, state->current_buffer.cursor.row + 1, 0);
 	} else {
 		if (*event.key.utf8 == UTF8_TAB) {
-			state->current_buffer.cursor.col += state->tab_spaces;
+			editor_set_cursor_position(
+				state, state->current_buffer.cursor.row,
+				state->current_buffer.cursor.col +
+					state->tab_spaces);
 		} else {
-			state->current_buffer.cursor.col++;
+			editor_set_cursor_position(
+				state, state->current_buffer.cursor.row,
+				state->current_buffer.cursor.col + 1);
 		}
 	}
 }
@@ -397,17 +442,23 @@ editor_handle_buffer_backspace(struct clk_EditorState *state)
 
 	if (state->current_buffer.cursor.col == 0) {
 		if (state->current_buffer.cursor.row > 0) {
-			state->current_buffer.cursor.row--;
-			state->current_buffer.cursor.col =
-				get_row_length(state->current_buffer.buffer,
-					       state->current_buffer.cursor.row,
-					       state->tab_spaces);
+			editor_set_cursor_position(
+				state, state->current_buffer.cursor.row - 1,
+				get_row_length(
+					state->current_buffer.buffer,
+					state->current_buffer.cursor.row - 1,
+					state->tab_spaces));
 		}
 	} else {
 		if (*(buffer->text + buffer->gap_start) == UTF8_TAB) {
-			state->current_buffer.cursor.col -= state->tab_spaces;
+			editor_set_cursor_position(
+				state, state->current_buffer.cursor.row,
+				state->current_buffer.cursor.col -
+					state->tab_spaces);
 		} else {
-			state->current_buffer.cursor.col--;
+			editor_set_cursor_position(
+				state, state->current_buffer.cursor.row,
+				state->current_buffer.cursor.col - 1);
 		}
 	}
 }
@@ -421,6 +472,37 @@ is_typeable_character(struct clk_Event event)
 	}
 
 	return FALSE;
+}
+
+mrm_internal const struct clk_Time toggle_visibility_delay = {
+	.s = 0,
+	.ns = 700000000ULL
+};
+
+mrm_internal void
+editor_set_cursor_position(struct clk_EditorState *state, uint16_t row,
+			   uint16_t col)
+{
+	state->current_buffer.cursor.row = row;
+	state->current_buffer.cursor.col = col;
+	state->current_buffer.cursor.is_visible = TRUE;
+}
+
+mrm_internal void
+editor_blink_cursor(struct clk_EditorState *state)
+{
+	// doesnt have to set to "toggle_visibility_delay", its just a convininent constant
+	local_persist struct clk_Time last_is_visible_toggle =
+		toggle_visibility_delay;
+
+	struct clk_Time delta;
+	time_get_delta(last_is_visible_toggle, state->last_tick, &delta);
+	if (delta.s >= toggle_visibility_delay.s &&
+	    delta.ns >= toggle_visibility_delay.ns) {
+		last_is_visible_toggle = state->last_tick;
+		state->current_buffer.cursor.is_visible =
+			!state->current_buffer.cursor.is_visible;
+	}
 }
 
 mrm_internal void

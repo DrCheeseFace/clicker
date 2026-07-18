@@ -51,6 +51,9 @@ struct clk_Time {
 
 void time_get_time(struct clk_Time *time);
 
+void time_get_delta(struct clk_Time start, struct clk_Time end,
+		    struct clk_Time *delta);
+
 // microsecond sleep
 void time_sleep_us(uint32_t ms);
 
@@ -317,6 +320,7 @@ struct clk_EditorState {
 		float frame_origin_y;
 
 		struct {
+			Bool is_visible;
 			size_t row;
 			size_t col;
 		} cursor;
