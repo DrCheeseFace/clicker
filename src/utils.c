@@ -7,8 +7,8 @@ global_variable const char *option_to_str[OPTION_FLAGS_COUNT] = {
 };
 
 const char *clk_keysym_to_string[CLK_KEYSYM_COUNT_] = {
-	"ARROW UP",   "ARROW DOWN", "ARROW LEFT", "ARROW RIGHT",
-	"BACKSPACE",  "LEFT SHIFT", "LEFT CTRL",  "ESCAPE",
+	"ARROW UP",   "ARROW DOWN", "ARROW LEFT", "ARROW RIGHT", "PLUS",
+	"MINUS",      "BACKSPACE",  "LEFT SHIFT", "LEFT CTRL",	 "ESCAPE",
 	"DEBUG BIND", "____",	    "NOT FOUND"
 };
 

@@ -6,8 +6,9 @@
 #include <string.h>
 
 const XID x11_keycode_to_clk_keysym_map[CLK_KEYSYM_COUNT] = {
-	XK_Up,	    XK_Down,	  XK_Left,   XK_Right, XK_BackSpace,
-	XK_Shift_L, XK_Control_L, XK_Escape, XK_bar
+	XK_Up,	      XK_Down,	  XK_Left,	XK_Right,  XK_plus, XK_minus,
+	XK_BackSpace, XK_Shift_L, XK_Control_L, XK_Escape, XK_bar
+
 };
 
 mrm_internal enum clk_Keysym

@@ -332,6 +332,22 @@ editor_handle_current_buffer_input(struct clk_EditorState *state,
 			return;
 		}
 
+		case CLK_KEYSYM_ADD: {
+			if (event.key.ctrl_down) {
+				state->current_buffer.font_size *= 1.2;
+			}
+
+			break;
+		}
+
+		case CLK_KEYSYM_MINUS: {
+			if (event.key.ctrl_down) {
+				state->current_buffer.font_size /= 1.2;
+			}
+
+			break;
+		}
+
 		default: {
 			// @TODO function to check if utf8 is actgually text and allat
 			if (is_typeable_character(event)) {
