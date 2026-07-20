@@ -13,7 +13,24 @@ const XID x11_keycode_to_clk_keysym_map[CLK_KEYSYM_COUNT] = {
 
 mrm_internal enum clk_Keysym
 window_translate_x11_keycode_to_clk_keysym(struct x11_Window *x11_window,
-					   XEvent event);
+					   XEvent event)
+{
+	KeySym keysym =
+		XkbKeycodeToKeysym(x11_window->main_display, event.xkey.keycode,
+				   0, event.xkey.state & ShiftMask ? 1 : 0);
+
+	if (keysym == NoSymbol) {
+		return CLK_KEYSYM_NOT_FOUND;
+	}
+
+	for (enum clk_Keysym sym = 0; sym < CLK_KEYSYM_COUNT; sym++) {
+		if (keysym == x11_keycode_to_clk_keysym_map[sym]) {
+			return sym;
+		}
+	}
+
+	return CLK_KEYSYM_NOT_FOUND;
+}
 
 // @TODO err handling
 void
@@ -87,19 +104,6 @@ window_free(struct clk_Window window)
 	free(x11_window);
 
 	return err;
-}
-
-void
-window_update_window_size(struct clk_Window *window)
-{
-	struct x11_Window *const x11_window = window->window_ctx;
-
-	XWindowAttributes attributes;
-	XGetWindowAttributes(x11_window->main_display, x11_window->main_window,
-			     &attributes);
-
-	window->window_w = attributes.width;
-	window->window_h = attributes.height;
 }
 
 void
@@ -216,6 +220,19 @@ window_pol_event(void)
 }
 
 void
+window_update_window_size(struct clk_Window *window)
+{
+	struct x11_Window *const x11_window = window->window_ctx;
+
+	XWindowAttributes attributes;
+	XGetWindowAttributes(x11_window->main_display, x11_window->main_window,
+			     &attributes);
+
+	window->window_w = attributes.width;
+	window->window_h = attributes.height;
+}
+
+void
 window_clear(struct clk_Window window)
 {
 	struct x11_Window *const x11_window = window.window_ctx;
@@ -248,25 +265,4 @@ window_draw_line(struct clk_Window window, uint16_t x1, uint16_t y1,
 
 	XDrawLine(x11_window->main_display, x11_window->main_window,
 		  x11_window->context, x1, y1, x2, y2);
-}
-
-mrm_internal enum clk_Keysym
-window_translate_x11_keycode_to_clk_keysym(struct x11_Window *x11_window,
-					   XEvent event)
-{
-	KeySym keysym =
-		XkbKeycodeToKeysym(x11_window->main_display, event.xkey.keycode,
-				   0, event.xkey.state & ShiftMask ? 1 : 0);
-
-	if (keysym == NoSymbol) {
-		return CLK_KEYSYM_NOT_FOUND;
-	}
-
-	for (enum clk_Keysym sym = 0; sym < CLK_KEYSYM_COUNT; sym++) {
-		if (keysym == x11_keycode_to_clk_keysym_map[sym]) {
-			return sym;
-		}
-	}
-
-	return CLK_KEYSYM_NOT_FOUND;
 }

@@ -5,10 +5,20 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-mrm_internal int next_empty_buffer(void);
-
 Buffer *buffers[MAX_BUFFERS] = { NULL };
 size_t system_page_size;
+
+mrm_internal int
+next_empty_buffer(void)
+{
+	for (uint8_t i = 0; i < MAX_BUFFERS; i++) {
+		if (buffers[i] == NULL) {
+			return i;
+		}
+	}
+
+	return NOT_FOUND;
+}
 
 Err
 buffers_init(void)
@@ -113,18 +123,6 @@ buffer_create_blank(size_t size, BufferID *const new_buffer_id)
 	*new_buffer_id = next_free_buffer_space;
 
 	return OK;
-}
-
-mrm_internal int
-next_empty_buffer(void)
-{
-	for (uint8_t i = 0; i < MAX_BUFFERS; i++) {
-		if (buffers[i] == NULL) {
-			return i;
-		}
-	}
-
-	return NOT_FOUND;
 }
 
 void
