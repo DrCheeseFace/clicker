@@ -1,12 +1,12 @@
 #ifndef INTERNAL_H
 #define INTERNAL_H
 
-#include <mr_utils.h>
-#include <stdint.h>
 #include <locale.h>
 #include <math.h>
-#include <string.h>
+#include <mr_utils.h>
 #include <stdarg.h>
+#include <stdint.h>
+#include <string.h>
 
 #include <cairo/cairo.h>
 
@@ -187,7 +187,7 @@ enum clk_Keysym {
 
 extern const char *clk_keysym_to_string[CLK_KEYSYM_COUNT_];
 
-enum clk_EventMouse {
+enum clk_EventMouseButton {
 	CLK_WINDOW_EVENT_MOUSE_NONE,
 	CLK_WINDOW_EVENT_MOUSE1,
 	CLK_WINDOW_EVENT_MOUSE2,
@@ -199,13 +199,14 @@ enum clk_EventMouse {
 
 struct clk_Event {
 	enum clk_EventType type;
-	struct {
-		enum clk_EventMouse button;
+
+	struct clk_EventMouse {
+		enum clk_EventMouseButton button;
 		uint16_t x;
 		uint16_t y;
 	} mouse;
 
-	struct {
+	struct clk_EventKeyboard {
 		// @TODO fuck this bool. fix me lol
 		Bool ctrl_down; // i have sinned...
 		char utf8[8]; // @TODO REMOVE THIS ASS
@@ -342,9 +343,39 @@ struct clk_EditorState {
 
 extern struct clk_EditorState clicker_state;
 
+struct clk_BindDefine {
+	enum clk_EventType type;
+
+	union {
+		struct clk_EventMouse mouse_event;
+		struct clk_EventKeyboard keyboard_event;
+	} event;
+
+	void (*on_event)(struct clk_EditorState *);
+};
+
+enum clk_Bind {
+	CLK_BIND_DEBUG,
+	CLK_BIND_INCREASE_FONT_SIZE,
+	CLK_BIND_DECREASE_FONT_SIZE,
+	CLK_BIND_MOVE_CURSOR_UP,
+	CLK_BIND_MOVE_CURSOR_DOWN,
+	CLK_BIND_MOVE_CURSOR_LEFT,
+	CLK_BIND_MOVE_CURSOR_RIGHT,
+	CLK_BIND_BACKSPACE,
+	CLK_BIND_BUFFER_CLICK,
+
+	CLK_BIND_COUNT,
+};
+
+extern const struct clk_BindDefine clicker_binds[CLK_BIND_COUNT];
+
 void editor_init(struct clk_EditorState *state, const char *filepath);
 
 void editor_free(struct clk_EditorState *state);
+
+void editor_set_cursor_position(struct clk_EditorState *state, uint16_t row,
+				uint16_t col);
 
 void editor_simulate(struct clk_EditorState *state, struct clk_Event event);
 
