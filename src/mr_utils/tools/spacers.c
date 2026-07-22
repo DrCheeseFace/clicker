@@ -140,7 +140,7 @@ Err check_file(MrlLogger *logger, FILE *file)
 
 Err write_file(MrlLogger *logger, FILE *file)
 {
-	MrvVector lines;
+	MrvVector lines = { 0 };
 	mrv_init(&lines, 1024, sizeof(MrsString));
 
 	for (;;) {
@@ -266,7 +266,7 @@ int main(int argc, char **argv)
 	if (argc == 1) {
 		log_help(logger);
 	}
-	MrvVector file_paths;
+	MrvVector file_paths = { 0 };
 	mrv_init(&file_paths, INIT_FILES_CAPACITY, sizeof(MrsString));
 	Err err = OK;
 	for (size_t i = 1; i < args.len; i++) {
