@@ -1,12 +1,5 @@
 #include "internal.h"
-#include <locale.h>
-#include <math.h>
-#include <mr_utils.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+
 
 // @TODO hacky impl
 mrm_internal Bool
@@ -339,9 +332,7 @@ mrm_internal const struct clk_Time toggle_visibility_delay = {
 mrm_internal void
 editor_blink_cursor(struct clk_EditorState *state)
 {
-	// doesnt have to set to "toggle_visibility_delay", its just a convininent constant
-	local_persist struct clk_Time last_is_visible_toggle =
-		toggle_visibility_delay;
+	local_persist struct clk_Time last_is_visible_toggle = { 0 };
 
 	struct clk_Time delta;
 	time_get_delta(last_is_visible_toggle, state->last_tick, &delta);

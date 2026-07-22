@@ -1,5 +1,4 @@
 #include "./internal.h"
-#include <string.h>
 
 mrm_internal void
 render_debug_draw_snack(struct clk_Renderer renderer)

@@ -1,9 +1,5 @@
 #include "../internal.h"
 #include "x11_internal.h"
-#include <mr_utils.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
 
 const XID x11_keycode_to_clk_keysym_map[CLK_KEYSYM_COUNT] = {
 	XK_Up,	      XK_Down,	  XK_Left,	XK_Right,  XK_plus, XK_minus,

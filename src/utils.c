@@ -1,6 +1,4 @@
 #include "./internal.h"
-#include <stdio.h>
-#include <string.h>
 
 global_variable const char *option_to_str[OPTION_FLAGS_COUNT] = {
 	"-h", "--help", "-v", "--version"

@@ -3,6 +3,10 @@
 
 #include <mr_utils.h>
 #include <stdint.h>
+#include <locale.h>
+#include <math.h>
+#include <string.h>
+#include <stdarg.h>
 
 #include <cairo/cairo.h>
 
@@ -56,6 +60,8 @@ void time_get_delta(struct clk_Time start, struct clk_Time end,
 
 // microsecond sleep
 void time_sleep_us(uint32_t ms);
+
+Bool time_greater_than_or_equal_to(struct clk_Time t1, struct clk_Time t2);
 
 //
 // BUFFER

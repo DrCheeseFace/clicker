@@ -1,9 +1,5 @@
 #include "../internal.h"
-#include <mr_utils.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <unistd.h>
+#include "./posix_internal.h"
 
 Buffer *buffers[MAX_BUFFERS] = { NULL };
 size_t system_page_size;
