@@ -2,7 +2,7 @@
 #include "x11_internal.h"
 
 const XID x11_keycode_to_clk_keysym_map[CLK_KEYSYM_COUNT] = {
-	XK_Up,	      XK_Down,	  XK_Left,	XK_Right,  XK_plus, XK_minus,
+	XK_Up,	      XK_Down,	  XK_Left,	XK_Right,  XK_equal, XK_minus,
 	XK_BackSpace, XK_Shift_L, XK_Control_L, XK_Escape, XK_bar
 
 };
@@ -120,19 +120,20 @@ window_pol_event(void)
 		return;
 
 	memset(&clicker_event, 0, sizeof(clicker_event));
+	clicker_event.type = CLK_WINDOW_EVENT_TYPE_NONE;
+	clicker_event.key.keysym = CLK_KEYSYM_NOT_FOUND;
 
 	if (GeneralEvent.xany.window != x11_window->main_window)
 		return;
 
+	clicker_event.key.ctrl_down =
+		(GeneralEvent.xkey.state & ControlMask) != 0;
+	clicker_event.key.keysym = window_translate_x11_keycode_to_clk_keysym(
+		x11_window, GeneralEvent);
+
 	switch (GeneralEvent.type) {
 	case KeyPress: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN;
-		clicker_event.key.keysym =
-			window_translate_x11_keycode_to_clk_keysym(
-				x11_window, GeneralEvent);
-
-		clicker_event.key.ctrl_down =
-			GeneralEvent.xkey.state & ControlMask;
 
 		KeySym keysym = NoSymbol;
 
@@ -154,12 +155,8 @@ window_pol_event(void)
 
 	case KeyRelease: {
 		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYUP;
-		clicker_event.key.keysym =
-			window_translate_x11_keycode_to_clk_keysym(
-				x11_window, GeneralEvent);
-		clicker_event.key.ctrl_down =
-			GeneralEvent.xkey.state & ControlMask;
 		clicker_event.key.utf8[0] = '\0';
+		clicker_event.key.keysym = CLK_KEYSYM_NOT_FOUND;
 		break;
 	}
 
@@ -168,8 +165,6 @@ window_pol_event(void)
 		clicker_event.mouse.x = GeneralEvent.xbutton.x;
 		clicker_event.mouse.y = GeneralEvent.xbutton.y;
 		clicker_event.mouse.button = GeneralEvent.xbutton.button;
-		clicker_event.key.ctrl_down =
-			GeneralEvent.xkey.state & ControlMask;
 		break;
 	}
 
@@ -178,8 +173,6 @@ window_pol_event(void)
 		clicker_event.mouse.x = GeneralEvent.xbutton.x;
 		clicker_event.mouse.y = GeneralEvent.xbutton.y;
 		clicker_event.mouse.button = GeneralEvent.xbutton.button;
-		clicker_event.key.ctrl_down =
-			GeneralEvent.xkey.state & ControlMask;
 		break;
 	}
 
@@ -188,8 +181,6 @@ window_pol_event(void)
 		clicker_event.mouse.x = GeneralEvent.xmotion.x;
 		clicker_event.mouse.y = GeneralEvent.xmotion.y;
 		clicker_event.mouse.button = 0;
-		clicker_event.key.ctrl_down =
-			GeneralEvent.xkey.state & ControlMask;
 		break;
 	}
 

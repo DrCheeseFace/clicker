@@ -240,7 +240,7 @@ const struct clk_BindDefine clicker_binds[CLK_BIND_COUNT] = {
 
 	{
 		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { TRUE, "", CLK_KEYSYM_ADD },
+		.event.keyboard_event = { TRUE, "", CLK_KEYSYM_EQUAL },
 		.on_event = &editor_increase_current_buffer_text_size,
 	},
 
@@ -252,25 +252,25 @@ const struct clk_BindDefine clicker_binds[CLK_BIND_COUNT] = {
 
 	{
 		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { TRUE, "", CLK_KEYSYM_ARROW_UP },
+		.event.keyboard_event = { FALSE, "", CLK_KEYSYM_ARROW_UP },
 		.on_event = &editor_current_buffer_move_cursor_up,
 	},
 
 	{
 		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { TRUE, "", CLK_KEYSYM_ARROW_DOWN },
+		.event.keyboard_event = { FALSE, "", CLK_KEYSYM_ARROW_DOWN },
 		.on_event = &editor_current_buffer_move_cursor_down,
 	},
 
 	{
 		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { TRUE, "", CLK_KEYSYM_ARROW_LEFT },
+		.event.keyboard_event = { FALSE, "", CLK_KEYSYM_ARROW_LEFT },
 		.on_event = &editor_current_buffer_move_cursor_left,
 	},
 
 	{
 		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { TRUE, "", CLK_KEYSYM_ARROW_RIGHT },
+		.event.keyboard_event = { FALSE, "", CLK_KEYSYM_ARROW_RIGHT },
 		.on_event = &editor_current_buffer_move_cursor_right,
 	},
 

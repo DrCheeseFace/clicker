@@ -18,6 +18,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 "mouse_x: %d \n"
 		 "mouse_y: %d \n"
 		 "text_len: %zu\n"
+		 "text_size: %f\n"
 		 "cursor_row: %zu \n"
 		 "cursor_col: %zu \n",
 		 clicker_state.last_tick.s, clicker_state.last_tick.ns,
@@ -29,6 +30,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 clicker_event.mouse.x, clicker_event.mouse.y,
 		 (size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
 			  (buffers[0]->gap_end - buffers[0]->gap_start)),
+		 clicker_state.current_buffer.font_size,
 		 clicker_state.current_buffer.cursor.row,
 		 clicker_state.current_buffer.cursor.col);
 

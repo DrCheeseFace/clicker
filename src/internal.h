@@ -172,7 +172,7 @@ enum clk_Keysym {
 	CLK_KEYSYM_ARROW_DOWN,
 	CLK_KEYSYM_ARROW_LEFT,
 	CLK_KEYSYM_ARROW_RIGHT,
-	CLK_KEYSYM_ADD,
+	CLK_KEYSYM_EQUAL,
 	CLK_KEYSYM_MINUS,
 	CLK_KEYSYM_BACKSPACE,
 	CLK_KEYSYM_SHIFT_LEFT,
@@ -343,6 +343,7 @@ struct clk_EditorState {
 
 extern struct clk_EditorState clicker_state;
 
+//@TODO scope these to a scene when this gets too stupid to handle
 struct clk_BindDefine {
 	enum clk_EventType type;
 

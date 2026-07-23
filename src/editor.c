@@ -125,6 +125,7 @@ void
 editor_do_binds(struct clk_EditorState *state, struct clk_Event event)
 {
 	enum clk_Bind bind = CLK_BIND_DEBUG;
+
 	// skip checking the debug bind in debug mode
 	if (!state->debug_mode) {
 		bind++;
