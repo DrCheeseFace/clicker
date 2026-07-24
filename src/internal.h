@@ -156,17 +156,6 @@ struct clk_Window {
 	uint16_t window_h;
 };
 
-enum clk_EventType {
-	CLK_WINDOW_EVENT_TYPE_NONE,
-	CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-	CLK_WINDOW_EVENT_TYPE_KEYUP,
-	CLK_WINDOW_EVENT_TYPE_MOUSEDOWN,
-	CLK_WINDOW_EVENT_TYPE_MOUSEUP,
-	CLK_WINDOW_EVENT_TYPE_MOUSEMOVE,
-	CLK_WINDOW_EVENT_TYPE_CLOSEREQ,
-	CLK_WINDOW_EVENT_TYPE_RESIZEREQ,
-};
-
 enum clk_Keysym {
 	CLK_KEYSYM_ARROW_UP = 0,
 	CLK_KEYSYM_ARROW_DOWN,
@@ -197,24 +186,40 @@ enum clk_EventMouseButton {
 
 };
 
-struct clk_Event {
-	enum clk_EventType type;
-
-	struct clk_EventMouse {
-		enum clk_EventMouseButton button;
-		uint16_t x;
-		uint16_t y;
-	} mouse;
-
-	struct clk_EventKeyboard {
-		// @TODO fuck this bool. fix me lol
-		Bool ctrl_down; // i have sinned...
-		char utf8[8]; // @TODO REMOVE THIS ASS
-		enum clk_Keysym keysym;
-	} key;
+enum clk_InputType {
+	CLK_INPUT_TYPE_MOUSE,
+	CLK_INPUT_TYPE_KEYBOARD,
+	CLK_INPUT_TYPE_CLOSEREQ,
+	CLK_INPUT_TYPE_RESIZEREQ,
 };
 
-extern struct clk_Event clicker_event;
+struct clk_Input {
+	enum clk_InputType type;
+
+	struct clk_Time time;
+
+	union {
+		enum clk_EventMouseButton mouse_button;
+
+		struct clk_EventKeyboard {
+			// @TODO fuck this bool. fix me lol
+			char utf8[8]; // @TODO REMOVE THIS ASS
+			enum clk_Keysym keysym;
+		} key;
+
+	} input;
+};
+
+#define MAX_INPUTS 16
+
+struct clk_Keystate {
+	uint16_t mouse_x;
+	uint16_t mouse_y;
+	uint8_t inputs_len;
+	struct clk_Input inputs[MAX_INPUTS];
+};
+
+extern struct clk_Keystate clicker_keystate;
 
 void window_init(struct clk_Window *window, int window_x, int window_y,
 		 int window_w, int window_h, int border_w);
@@ -225,6 +230,28 @@ void window_update_window_size(struct clk_Window *window);
 
 // returns 1 if event occured
 void window_pol_event(void);
+
+#define INPUT_CLOSEREQ                                                         \
+	(struct clk_Input)                                                     \
+	{                                                                      \
+		.type = CLK_INPUT_TYPE_CLOSEREQ                                \
+	}
+
+#define INPUT_RESIZEREQ                                                        \
+	(struct clk_Input)                                                     \
+	{                                                                      \
+		.type = CLK_INPUT_TYPE_RESIZEREQ                               \
+	}
+
+#define INPUT_CTRL                                                             \
+	(struct clk_Input)                                                     \
+	{                                                                      \
+		.type = CLK_INPUT_TYPE_KEYBOARD,                               \
+		.input.key.keysym = CLK_KEYSYM_CTRL_LEFT                       \
+	}
+
+int window_inputs_contains_input(struct clk_Keystate keystate,
+				 struct clk_Input input);
 
 void window_clear(struct clk_Window window);
 
@@ -345,12 +372,10 @@ extern struct clk_EditorState clicker_state;
 
 //@TODO scope these to a scene when this gets too stupid to handle
 struct clk_BindDefine {
-	enum clk_EventType type;
+	enum clk_InputType type;
 
-	union {
-		struct clk_EventMouse mouse_event;
-		struct clk_EventKeyboard keyboard_event;
-	} event;
+	uint8_t inputs_len;
+	struct clk_Input inputs[MAX_INPUTS];
 
 	void (*on_event)(struct clk_EditorState *);
 };
@@ -378,7 +403,8 @@ void editor_free(struct clk_EditorState *state);
 void editor_set_cursor_position(struct clk_EditorState *state, uint16_t row,
 				uint16_t col);
 
-void editor_simulate(struct clk_EditorState *state, struct clk_Event event);
+void editor_simulate(struct clk_EditorState *state,
+		     struct clk_Keystate keystate);
 
 void editor_set_err_msg(struct clk_EditorState *state, const char *err_msg,
 			...);

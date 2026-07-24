@@ -28,6 +28,51 @@ window_translate_x11_keycode_to_clk_keysym(struct x11_Window *x11_window,
 	return CLK_KEYSYM_NOT_FOUND;
 }
 
+mrm_internal void
+window_inputs_add_input(struct clk_Keystate *keystate, struct clk_Input input)
+{
+	if (keystate->inputs_len >= MAX_INPUTS) {
+		editor_set_err_msg(&clicker_state, "failed to add input");
+		return;
+	}
+
+	keystate->inputs[keystate->inputs_len] = input;
+
+	keystate->inputs_len++;
+}
+
+mrm_internal void
+window_inputs_remove_keyboard_input(struct clk_Keystate *keystate,
+				    enum clk_Keysym keysym)
+{
+	for (struct clk_Input *i = &keystate->inputs[0];
+	     i < &keystate->inputs[keystate->inputs_len]; i++) {
+		if (i->type == CLK_INPUT_TYPE_KEYBOARD &&
+		    i->input.key.keysym == keysym) {
+			*i = keystate->inputs[keystate->inputs_len - 1];
+			keystate->inputs_len -= 1;
+
+			return;
+		}
+	}
+}
+
+mrm_internal void
+window_inputs_remove_mouse_input(struct clk_Keystate *keystate,
+				 enum clk_EventMouseButton button)
+{
+	for (struct clk_Input *i = &keystate->inputs[0];
+	     i < &keystate->inputs[keystate->inputs_len]; i++) {
+		if (i->type == CLK_INPUT_TYPE_MOUSE &&
+		    i->input.mouse_button == button) {
+			*i = keystate->inputs[keystate->inputs_len - 1];
+			keystate->inputs_len -= 1;
+
+			return;
+		}
+	}
+}
+
 // @TODO err handling
 void
 window_init(struct clk_Window *window, int window_x, int window_y, int window_w,
@@ -119,81 +164,89 @@ window_pol_event(void)
 	if (XFilterEvent(&GeneralEvent, x11_window->main_window))
 		return;
 
-	memset(&clicker_event, 0, sizeof(clicker_event));
-	clicker_event.type = CLK_WINDOW_EVENT_TYPE_NONE;
-	clicker_event.key.keysym = CLK_KEYSYM_NOT_FOUND;
-
 	if (GeneralEvent.xany.window != x11_window->main_window)
 		return;
 
-	clicker_event.key.ctrl_down =
-		(GeneralEvent.xkey.state & ControlMask) != 0;
-	clicker_event.key.keysym = window_translate_x11_keycode_to_clk_keysym(
-		x11_window, GeneralEvent);
-
 	switch (GeneralEvent.type) {
 	case KeyPress: {
-		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN;
+		struct clk_Input input = {
+			.type = CLK_INPUT_TYPE_KEYBOARD,
+			.input.key.keysym =
+				window_translate_x11_keycode_to_clk_keysym(
+					x11_window, GeneralEvent),
+		};
 
+		// hacky change this
 		KeySym keysym = NoSymbol;
-
 		int count =
 			Xutf8LookupString(x11_window->xic, &GeneralEvent.xkey,
-					  clicker_event.key.utf8,
-					  sizeof(clicker_event.key.utf8) - 1,
+					  input.input.key.utf8,
+					  sizeof(input.input.key.utf8) - 1,
 					  &keysym, NULL);
-
-		if (count < 0 || count >= (int)sizeof(clicker_event.key.utf8)) {
+		if (count < 0 || count >= (int)sizeof(input.input.key.utf8)) {
 			count = 0;
 		}
-
 		// null terminate utf8. (so can tell the byte count later)
-		clicker_event.key.utf8[count] = '\0';
+		input.input.key.utf8[count] = '\0';
+		time_get_time(&input.time);
+
+		window_inputs_add_input(&clicker_keystate, input);
 
 		break;
 	}
 
 	case KeyRelease: {
-		clicker_event.type = CLK_WINDOW_EVENT_TYPE_KEYUP;
-		clicker_event.key.utf8[0] = '\0';
-		clicker_event.key.keysym = CLK_KEYSYM_NOT_FOUND;
+		enum clk_Keysym keysym =
+			window_translate_x11_keycode_to_clk_keysym(
+				x11_window, GeneralEvent);
+
+		window_inputs_remove_keyboard_input(&clicker_keystate, keysym);
 		break;
 	}
 
 	case ButtonPress: {
-		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEDOWN;
-		clicker_event.mouse.x = GeneralEvent.xbutton.x;
-		clicker_event.mouse.y = GeneralEvent.xbutton.y;
-		clicker_event.mouse.button = GeneralEvent.xbutton.button;
+		struct clk_Input input = {
+			.type = CLK_INPUT_TYPE_MOUSE,
+			.input.mouse_button = GeneralEvent.xbutton.button
+		};
+
+		window_inputs_add_input(&clicker_keystate, input);
+
 		break;
 	}
 
 	case ButtonRelease: {
-		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEUP;
-		clicker_event.mouse.x = GeneralEvent.xbutton.x;
-		clicker_event.mouse.y = GeneralEvent.xbutton.y;
-		clicker_event.mouse.button = GeneralEvent.xbutton.button;
+		window_inputs_remove_mouse_input(&clicker_keystate,
+						 GeneralEvent.xbutton.button);
 		break;
 	}
 
 	case MotionNotify: {
-		clicker_event.type = CLK_WINDOW_EVENT_TYPE_MOUSEMOVE;
-		clicker_event.mouse.x = GeneralEvent.xmotion.x;
-		clicker_event.mouse.y = GeneralEvent.xmotion.y;
-		clicker_event.mouse.button = 0;
+		XEvent motion_event = GeneralEvent;
+		while (XCheckTypedWindowEvent(x11_window->main_display,
+					      x11_window->main_window,
+					      MotionNotify, &GeneralEvent)) {
+		}
+		clicker_keystate.mouse_x = motion_event.xmotion.x;
+		clicker_keystate.mouse_y = motion_event.xmotion.y;
 		break;
 	}
 
 	case ClientMessage: {
 		if ((Atom)GeneralEvent.xclient.data.l[0] ==
 		    x11_window->wm_delete_window) {
-			clicker_event.type = CLK_WINDOW_EVENT_TYPE_CLOSEREQ;
+			window_inputs_add_input(
+				&clicker_keystate,
+				(struct clk_Input){
+					.type = CLK_INPUT_TYPE_CLOSEREQ });
 		}
 		break;
 	}
 
 	case ConfigureNotify: {
-		clicker_event.type = CLK_WINDOW_EVENT_TYPE_RESIZEREQ;
+		window_inputs_add_input(
+			&clicker_keystate,
+			(struct clk_Input){ .type = CLK_INPUT_TYPE_RESIZEREQ });
 		break;
 	}
 
@@ -204,6 +257,42 @@ window_pol_event(void)
 	}
 
 	return;
+}
+
+int
+window_inputs_contains_input(struct clk_Keystate keystate,
+			     struct clk_Input input)
+{
+	for (struct clk_Input *i = &keystate.inputs[0];
+	     i < &keystate.inputs[keystate.inputs_len]; i++) {
+		if (i->type != input.type)
+			continue;
+
+		switch (i->type) {
+		case CLK_INPUT_TYPE_KEYBOARD:
+			if (i->input.key.keysym != input.input.key.keysym)
+				break;
+			if (i->input.key.keysym == CLK_KEYSYM_NOT_FOUND) {
+				if (strcmp(i->input.key.utf8,
+					   input.input.key.utf8) == 0)
+					return TRUE;
+			} else {
+				return TRUE;
+			}
+			break;
+		case CLK_INPUT_TYPE_MOUSE:
+			if (i->input.mouse_button == input.input.mouse_button)
+				return TRUE;
+			break;
+		case CLK_INPUT_TYPE_CLOSEREQ:
+		case CLK_INPUT_TYPE_RESIZEREQ:
+			return TRUE;
+		default:
+			break;
+		}
+	}
+
+	return FALSE;
 }
 
 void

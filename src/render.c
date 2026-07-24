@@ -5,29 +5,22 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 {
 	draw_push_attr(renderer.clk_draw);
 
-	char debug_event_snack_text[256];
+	char debug_event_snack_text[2048];
 
 	snprintf(debug_event_snack_text, sizeof(debug_event_snack_text),
-		 "time: %lu:%lu \n"
-		 "eventtype: %d \n"
-		 "keysym: %s \n"
-		 "utf8: %s \n"
-		 "utf8_hex: 0x%.2hhx \n"
-		 "ctrl_down: %d \n"
-		 "mouse_button: %d \n"
-		 "mouse_x: %d \n"
-		 "mouse_y: %d \n"
+		 "time: %lu:%lu\n"
+		 "inputs_len: %d\n"
+		 "ctrl_down: %d\n"
+		 "mouse_x: %d\n"
+		 "mouse_y: %d\n"
 		 "text_len: %zu\n"
 		 "text_size: %f\n"
-		 "cursor_row: %zu \n"
-		 "cursor_col: %zu \n",
+		 "cursor_row: %zu\n"
+		 "cursor_col: %zu\n",
 		 clicker_state.last_tick.s, clicker_state.last_tick.ns,
-		 clicker_event.type,
-		 clk_keysym_to_string[clicker_event.key.keysym],
-		 clicker_event.key.utf8,
-		 (unsigned char)clicker_event.key.utf8[0],
-		 clicker_event.key.ctrl_down, clicker_event.mouse.button,
-		 clicker_event.mouse.x, clicker_event.mouse.y,
+		 clicker_keystate.inputs_len,
+		 window_inputs_contains_input(clicker_keystate, INPUT_CTRL),
+		 clicker_keystate.mouse_x, clicker_keystate.mouse_y,
 		 (size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
 			  (buffers[0]->gap_end - buffers[0]->gap_start)),
 		 clicker_state.current_buffer.font_size,
@@ -269,11 +262,11 @@ render_frame(struct clk_Renderer *renderer, struct clk_EditorState state)
 							renderer->clk_window);
 	}
 
+	render_text_buffer(renderer, state);
+
 	if (state.debug_mode) {
 		render_debug_draw_snack(*renderer);
 	}
-
-	render_text_buffer(renderer, state);
 
 	draw_flush(renderer->clk_draw);
 	window_flush_display(renderer->clk_window);

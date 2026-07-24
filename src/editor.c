@@ -23,15 +23,30 @@ editor_blink_cursor(struct clk_EditorState *state)
 }
 
 mrm_internal void
-editor_buffer_text_input(struct clk_EditorState *state, struct clk_Event event)
+editor_buffer_text_input(struct clk_EditorState *state,
+			 struct clk_Keystate keystate)
 {
-	buffer_insert_utf8(state->current_buffer.buffer, event.key.utf8);
+	// @TODO hacky fix this be
+	struct clk_EventKeyboard input = { 0 };
+	for (struct clk_Input *i = &keystate.inputs[0];
+	     i < &keystate.inputs[keystate.inputs_len]; i++) {
+		if (i->type == CLK_INPUT_TYPE_KEYBOARD &&
+		    i->input.key.keysym == CLK_KEYSYM_NOT_FOUND) {
+			strcpy(input.utf8, i->input.key.utf8);
+			break;
+		}
+	}
 
-	if (*event.key.utf8 == UTF8_RETURN || *event.key.utf8 == UTF8_NEWLINE) {
+	if (input.utf8[0] == '\0')
+		return;
+
+	buffer_insert_utf8(state->current_buffer.buffer, input.utf8);
+
+	if (*input.utf8 == UTF8_RETURN || *input.utf8 == UTF8_NEWLINE) {
 		editor_set_cursor_position(
 			state, state->current_buffer.cursor.row + 1, 0);
 	} else {
-		if (*event.key.utf8 == UTF8_TAB) {
+		if (*input.utf8 == UTF8_TAB) {
 			editor_set_cursor_position(
 				state, state->current_buffer.cursor.row,
 				state->current_buffer.cursor.col +
@@ -122,52 +137,28 @@ editor_free(struct clk_EditorState *state)
 }
 
 void
-editor_do_binds(struct clk_EditorState *state, struct clk_Event event)
+editor_do_binds(struct clk_EditorState *state, struct clk_Keystate keystate)
 {
 	enum clk_Bind bind = CLK_BIND_DEBUG;
 
-	// skip checking the debug bind in debug mode
 	if (!state->debug_mode) {
 		bind++;
 	}
 
 	while (bind < CLK_BIND_COUNT) {
-		struct clk_BindDefine define = clicker_binds[bind];
+		struct clk_BindDefine def = clicker_binds[bind];
+		Bool all_present = TRUE;
 
-		switch (define.type) {
-		case CLK_WINDOW_EVENT_TYPE_NONE:
-			break;
-
-		case CLK_WINDOW_EVENT_TYPE_KEYDOWN: {
-			if (define.event.keyboard_event.ctrl_down ==
-				    event.key.ctrl_down &&
-			    define.event.keyboard_event.keysym ==
-				    event.key.keysym) {
-				define.on_event(state);
+		for (uint8_t i = 0; i < def.inputs_len; i++) {
+			if (!window_inputs_contains_input(keystate,
+							  def.inputs[i])) {
+				all_present = FALSE;
+				break;
 			}
-			break;
 		}
 
-		case CLK_WINDOW_EVENT_TYPE_KEYUP:
-			break;
-
-		case CLK_WINDOW_EVENT_TYPE_MOUSEDOWN: {
-			if (define.event.mouse_event.button ==
-			    event.mouse.button) {
-				define.on_event(state);
-			}
-			break;
-		}
-
-		case CLK_WINDOW_EVENT_TYPE_MOUSEUP:
-			break;
-
-		case CLK_WINDOW_EVENT_TYPE_MOUSEMOVE:
-			break;
-
-		default: {
-			return;
-		}
+		if (all_present) {
+			def.on_event(state);
 		}
 
 		bind++;
@@ -175,11 +166,12 @@ editor_do_binds(struct clk_EditorState *state, struct clk_Event event)
 }
 
 void
-editor_simulate(struct clk_EditorState *state, struct clk_Event event)
+editor_simulate(struct clk_EditorState *state, struct clk_Keystate keystate)
 {
-	state->resize_required = event.type == CLK_WINDOW_EVENT_TYPE_RESIZEREQ;
+	state->resize_required =
+		window_inputs_contains_input(keystate, INPUT_RESIZEREQ);
 
-	if (event.type == CLK_WINDOW_EVENT_TYPE_CLOSEREQ) {
+	if (window_inputs_contains_input(keystate, INPUT_CLOSEREQ)) {
 		state->is_running = FALSE;
 		return;
 	}
@@ -190,13 +182,9 @@ editor_simulate(struct clk_EditorState *state, struct clk_Event event)
 		 clicker_renderer.clk_draw.current_font_height) +
 		1;
 
-	editor_do_binds(state, event);
+	editor_do_binds(state, keystate);
 
-	// @TODO hacky fix this be
-	if (event.type == CLK_WINDOW_EVENT_TYPE_KEYDOWN &&
-	    event.key.keysym == CLK_KEYSYM_NOT_FOUND && !event.key.ctrl_down) {
-		editor_buffer_text_input(state, event);
-	}
+	editor_buffer_text_input(state, keystate);
 
 	editor_blink_cursor(state);
 }

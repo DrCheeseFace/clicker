@@ -1,6 +1,6 @@
 #include "./internal.h"
 
-struct clk_Event clicker_event = { 0 };
+struct clk_Keystate clicker_keystate = { 0 };
 struct clk_Renderer clicker_renderer = { 0 };
 struct clk_EditorState clicker_state = { 0 };
 
@@ -31,7 +31,7 @@ main(int argc, char **argv)
 
 		window_pol_event();
 
-		editor_simulate(&clicker_state, clicker_event);
+		editor_simulate(&clicker_state, clicker_keystate);
 
 		render_frame(&clicker_renderer, clicker_state);
 

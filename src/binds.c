@@ -157,8 +157,8 @@ editor_buffer_backspace(struct clk_EditorState *state)
 mrm_internal void
 editor_click_within_current_buffer(struct clk_EditorState *state)
 {
-	const uint16_t mouse_x_pos = clicker_event.mouse.x;
-	const uint16_t mouse_y_pos = clicker_event.mouse.y;
+	const uint16_t mouse_x_pos = clicker_keystate.mouse_x;
+	const uint16_t mouse_y_pos = clicker_keystate.mouse_y;
 
 	// check bounds of text frame
 	if (mouse_x_pos < state->current_buffer.frame_origin_x)
@@ -233,56 +233,83 @@ editor_decrease_current_buffer_text_size(struct clk_EditorState *state)
 
 const struct clk_BindDefine clicker_binds[CLK_BIND_COUNT] = {
 	{
-		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { FALSE, "", CLK_KEYSYM_DEBUG_BIND },
+		.type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs_len = 1,
+		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+			      .input = { .key = { .utf8 = "",
+						  .keysym =
+							  CLK_KEYSYM_DEBUG_BIND } } } },
 		.on_event = &editor_debug_dump_buffer_to_file,
 	},
-
 	{
-		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { TRUE, "", CLK_KEYSYM_EQUAL },
+		.type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs_len = 1,
+		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+			      .input = { .key = { .utf8 = "",
+						  .keysym =
+							  CLK_KEYSYM_EQUAL } } } },
 		.on_event = &editor_increase_current_buffer_text_size,
 	},
-
 	{
-		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { TRUE, "", CLK_KEYSYM_MINUS },
+		.type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs_len = 1,
+		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+			      .input = { .key = { .utf8 = "",
+						  .keysym =
+							  CLK_KEYSYM_MINUS } } } },
 		.on_event = &editor_decrease_current_buffer_text_size,
 	},
-
 	{
-		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { FALSE, "", CLK_KEYSYM_ARROW_UP },
+		.type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs_len = 1,
+		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+			      .input = { .key = { .utf8 = "",
+						  .keysym =
+							  CLK_KEYSYM_ARROW_UP } } } },
 		.on_event = &editor_current_buffer_move_cursor_up,
 	},
-
 	{
-		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { FALSE, "", CLK_KEYSYM_ARROW_DOWN },
+		.type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs_len = 1,
+		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+			      .input = { .key = { .utf8 = "",
+						  .keysym =
+							  CLK_KEYSYM_ARROW_DOWN } } } },
 		.on_event = &editor_current_buffer_move_cursor_down,
 	},
-
 	{
-		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { FALSE, "", CLK_KEYSYM_ARROW_LEFT },
+		.type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs_len = 1,
+		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+			      .input = { .key = { .utf8 = "",
+						  .keysym =
+							  CLK_KEYSYM_ARROW_LEFT } } } },
 		.on_event = &editor_current_buffer_move_cursor_left,
 	},
-
 	{
-		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { FALSE, "", CLK_KEYSYM_ARROW_RIGHT },
+		.type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs_len = 1,
+		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+			      .input = { .key = { .utf8 = "",
+						  .keysym =
+							  CLK_KEYSYM_ARROW_RIGHT } } } },
 		.on_event = &editor_current_buffer_move_cursor_right,
 	},
-
 	{
-		.type = CLK_WINDOW_EVENT_TYPE_KEYDOWN,
-		.event.keyboard_event = { FALSE, "", CLK_KEYSYM_BACKSPACE },
+		.type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs_len = 1,
+		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+			      .input = { .key = { .utf8 = "",
+						  .keysym =
+							  CLK_KEYSYM_BACKSPACE } } } },
 		.on_event = &editor_buffer_backspace,
 	},
-
 	{
-		.type = CLK_WINDOW_EVENT_TYPE_MOUSEDOWN,
-		.event.mouse_event = { CLK_WINDOW_EVENT_MOUSE1, 0, 0 },
+		.type = CLK_INPUT_TYPE_MOUSE,
+		.inputs_len = 1,
+		.inputs = { { .type = CLK_INPUT_TYPE_MOUSE,
+			      .input = { .mouse_button =
+						 CLK_WINDOW_EVENT_MOUSE1 } } },
 		.on_event = &editor_click_within_current_buffer,
 	}
 };

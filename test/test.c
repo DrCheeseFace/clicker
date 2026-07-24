@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
-struct clk_Event clicker_event = { 0 };
+struct clk_Keystate clicker_keystate = { 0 };
 struct clk_Renderer clicker_renderer = { 0 };
 struct clk_EditorState clicker_state = { 0 };
 
