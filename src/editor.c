@@ -27,6 +27,8 @@ editor_buffer_text_input(struct clk_EditorState *state,
 			 struct clk_Keystate keystate)
 {
 	// @TODO hacky fix this be
+	if (window_inputs_contains_input(keystate, INPUT_CTRL))
+		return;
 	struct clk_EventKeyboard input = { 0 };
 	for (struct clk_Input *i = &keystate.inputs[0];
 	     i < &keystate.inputs[keystate.inputs_len]; i++) {
@@ -36,7 +38,6 @@ editor_buffer_text_input(struct clk_EditorState *state,
 			break;
 		}
 	}
-
 	if (input.utf8[0] == '\0')
 		return;
 
