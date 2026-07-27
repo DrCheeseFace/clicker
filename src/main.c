@@ -31,7 +31,7 @@ main(int argc, char **argv)
 
 		window_pol_event();
 
-		editor_simulate(&clicker_state, clicker_keystate);
+		editor_simulate(&clicker_state, &clicker_keystate);
 
 		render_frame(&clicker_renderer, clicker_state);
 

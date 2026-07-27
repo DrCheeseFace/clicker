@@ -214,9 +214,13 @@ struct clk_Input {
 #define MAX_INPUTS 16
 
 struct clk_Keystate {
+	uint8_t inputs_len;
+
 	uint16_t mouse_x;
 	uint16_t mouse_y;
-	uint8_t inputs_len;
+
+	struct clk_Time current_pol_time;
+
 	struct clk_Input inputs[MAX_INPUTS];
 };
 
@@ -405,7 +409,7 @@ void editor_set_cursor_position(struct clk_EditorState *state, uint16_t row,
 				uint16_t col);
 
 void editor_simulate(struct clk_EditorState *state,
-		     struct clk_Keystate keystate);
+		     struct clk_Keystate *keystate);
 
 void editor_set_err_msg(struct clk_EditorState *state, const char *err_msg,
 			...);

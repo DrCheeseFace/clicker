@@ -153,110 +153,121 @@ window_pol_event(void)
 	struct x11_Window *const x11_window =
 		clicker_renderer.clk_window.window_ctx;
 
-	if (XPending(x11_window->main_display) == 0) {
-		return;
-	}
+	while (XPending(x11_window->main_display) > 0) {
+		XEvent GeneralEvent = { 0 };
+		XNextEvent(x11_window->main_display, &GeneralEvent);
 
-	XEvent GeneralEvent = { 0 };
-	XNextEvent(x11_window->main_display, &GeneralEvent);
+		time_get_time(&clicker_keystate.current_pol_time);
 
-	/* xim support need to filter */
-	if (XFilterEvent(&GeneralEvent, x11_window->main_window))
-		return;
+		if (XFilterEvent(&GeneralEvent, x11_window->main_window))
+			continue;
 
-	if (GeneralEvent.xany.window != x11_window->main_window)
-		return;
+		if (GeneralEvent.xany.window != x11_window->main_window)
+			continue;
 
-	switch (GeneralEvent.type) {
-	case KeyPress: {
-		struct clk_Input input = {
-			.type = CLK_INPUT_TYPE_KEYBOARD,
-			.input.key.keysym =
+		switch (GeneralEvent.type) {
+		case KeyPress: {
+			struct clk_Input input = {
+				.type = CLK_INPUT_TYPE_KEYBOARD,
+				.input.key.keysym =
+					window_translate_x11_keycode_to_clk_keysym(
+						x11_window, GeneralEvent),
+			};
+
+			KeySym keysym = NoSymbol;
+			int count = Xutf8LookupString(
+				x11_window->xic, &GeneralEvent.xkey,
+				input.input.key.utf8,
+				sizeof(input.input.key.utf8) - 1, &keysym,
+				NULL);
+			if (count < 0 ||
+			    count >= (int)sizeof(input.input.key.utf8)) {
+				count = 0;
+			}
+
+			input.input.key.utf8[count] = '\0';
+			input.time = clicker_keystate.current_pol_time;
+
+			window_inputs_add_input(&clicker_keystate, input);
+			break;
+		}
+
+		case KeyRelease: {
+			if (XPending(x11_window->main_display) > 0) {
+				XEvent next;
+				XPeekEvent(x11_window->main_display, &next);
+				if (next.type == KeyPress &&
+				    next.xkey.keycode ==
+					    GeneralEvent.xkey.keycode) {
+					// fake release
+					break;
+				}
+			}
+
+			enum clk_Keysym keysym =
 				window_translate_x11_keycode_to_clk_keysym(
-					x11_window, GeneralEvent),
-		};
+					x11_window, GeneralEvent);
 
-		// hacky change this
-		KeySym keysym = NoSymbol;
-		int count =
-			Xutf8LookupString(x11_window->xic, &GeneralEvent.xkey,
-					  input.input.key.utf8,
-					  sizeof(input.input.key.utf8) - 1,
-					  &keysym, NULL);
-		if (count < 0 || count >= (int)sizeof(input.input.key.utf8)) {
-			count = 0;
+			if (keysym != CLK_KEYSYM_NOT_FOUND) {
+				window_inputs_remove_keyboard_input(
+					&clicker_keystate, keysym);
+			}
+			break;
 		}
-		// null terminate utf8. (so can tell the byte count later)
-		input.input.key.utf8[count] = '\0';
-		time_get_time(&input.time);
 
-		window_inputs_add_input(&clicker_keystate, input);
-
-		break;
-	}
-
-	case KeyRelease: {
-		enum clk_Keysym keysym =
-			window_translate_x11_keycode_to_clk_keysym(
-				x11_window, GeneralEvent);
-
-		window_inputs_remove_keyboard_input(&clicker_keystate, keysym);
-		break;
-	}
-
-	case ButtonPress: {
-		struct clk_Input input = {
-			.type = CLK_INPUT_TYPE_MOUSE,
-			.input.mouse_button = GeneralEvent.xbutton.button
-		};
-
-		window_inputs_add_input(&clicker_keystate, input);
-
-		break;
-	}
-
-	case ButtonRelease: {
-		window_inputs_remove_mouse_input(&clicker_keystate,
-						 GeneralEvent.xbutton.button);
-		break;
-	}
-
-	case MotionNotify: {
-		XEvent motion_event = GeneralEvent;
-		while (XCheckTypedWindowEvent(x11_window->main_display,
-					      x11_window->main_window,
-					      MotionNotify, &GeneralEvent)) {
+		case ButtonPress: {
+			struct clk_Input input = {
+				.type = CLK_INPUT_TYPE_MOUSE,
+				.input.mouse_button =
+					GeneralEvent.xbutton.button
+			};
+			window_inputs_add_input(&clicker_keystate, input);
+			break;
 		}
-		clicker_keystate.mouse_x = motion_event.xmotion.x;
-		clicker_keystate.mouse_y = motion_event.xmotion.y;
-		break;
-	}
 
-	case ClientMessage: {
-		if ((Atom)GeneralEvent.xclient.data.l[0] ==
-		    x11_window->wm_delete_window) {
+		case ButtonRelease: {
+			window_inputs_remove_mouse_input(
+				&clicker_keystate, GeneralEvent.xbutton.button);
+			break;
+		}
+
+		case MotionNotify: {
+			XEvent motion_event = GeneralEvent;
+			while (XCheckTypedWindowEvent(x11_window->main_display,
+						      x11_window->main_window,
+						      MotionNotify,
+						      &GeneralEvent)) {
+			}
+			clicker_keystate.mouse_x = motion_event.xmotion.x;
+			clicker_keystate.mouse_y = motion_event.xmotion.y;
+			break;
+		}
+
+		case ClientMessage: {
+			if ((Atom)GeneralEvent.xclient.data.l[0] ==
+			    x11_window->wm_delete_window) {
+				window_inputs_add_input(
+					&clicker_keystate,
+					(struct clk_Input){
+						.type = CLK_INPUT_TYPE_CLOSEREQ });
+			}
+			break;
+		}
+
+		case ConfigureNotify: {
 			window_inputs_add_input(
 				&clicker_keystate,
 				(struct clk_Input){
-					.type = CLK_INPUT_TYPE_CLOSEREQ });
+					.type = CLK_INPUT_TYPE_RESIZEREQ });
+			break;
 		}
-		break;
-	}
 
-	case ConfigureNotify: {
-		window_inputs_add_input(
-			&clicker_keystate,
-			(struct clk_Input){ .type = CLK_INPUT_TYPE_RESIZEREQ });
-		break;
+		case EnterNotify:
+		case LeaveNotify:
+		default:
+			break;
+		}
 	}
-
-	case EnterNotify:
-	case LeaveNotify:
-	default:
-		break;
-	}
-
-	return;
 }
 
 int

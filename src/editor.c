@@ -1,7 +1,7 @@
 #include "internal.h"
 
 // @TODO remove me
-mrm_internal const struct clk_Time toggle_visibility_delay = {
+mrm_internal const struct clk_Time toggle_cursor_visibility_delay = {
 	.s = 0,
 	.ns = 700000000ULL
 };
@@ -14,8 +14,10 @@ editor_blink_cursor(struct clk_EditorState *state)
 
 	struct clk_Time delta;
 	time_get_delta(last_is_visible_toggle, state->last_tick, &delta);
-	if (delta.s >= toggle_visibility_delay.s &&
-	    delta.ns >= toggle_visibility_delay.ns) {
+
+	// @TODO use time_greater_than_or_equal_to()
+	if (time_greater_than_or_equal_to(delta,
+					  toggle_cursor_visibility_delay)) {
 		last_is_visible_toggle = state->last_tick;
 		state->current_buffer.cursor.is_visible =
 			!state->current_buffer.cursor.is_visible;
@@ -24,38 +26,42 @@ editor_blink_cursor(struct clk_EditorState *state)
 
 mrm_internal void
 editor_buffer_text_input(struct clk_EditorState *state,
-			 struct clk_Keystate keystate)
+			 struct clk_Keystate *keystate)
 {
-	// @TODO hacky fix this be
-	if (window_inputs_contains_input(keystate, INPUT_CTRL))
-		return;
-	struct clk_EventKeyboard input = { 0 };
-	for (struct clk_Input *i = &keystate.inputs[0];
-	     i < &keystate.inputs[keystate.inputs_len]; i++) {
-		if (i->type == CLK_INPUT_TYPE_KEYBOARD &&
-		    i->input.key.keysym == CLK_KEYSYM_NOT_FOUND) {
-			strcpy(input.utf8, i->input.key.utf8);
-			break;
-		}
-	}
-	if (input.utf8[0] == '\0')
+	if (window_inputs_contains_input(*keystate, INPUT_CTRL))
 		return;
 
-	buffer_insert_utf8(state->current_buffer.buffer, input.utf8);
+	for (int i = 0; i < keystate->inputs_len;) {
+		struct clk_Input *inp = &keystate->inputs[i];
 
-	if (*input.utf8 == UTF8_RETURN || *input.utf8 == UTF8_NEWLINE) {
-		editor_set_cursor_position(
-			state, state->current_buffer.cursor.row + 1, 0);
-	} else {
-		if (*input.utf8 == UTF8_TAB) {
-			editor_set_cursor_position(
-				state, state->current_buffer.cursor.row,
-				state->current_buffer.cursor.col +
-					state->tab_spaces);
+		if (inp->type == CLK_INPUT_TYPE_KEYBOARD &&
+		    inp->input.key.keysym == CLK_KEYSYM_NOT_FOUND &&
+		    *inp->input.key.utf8 != '\0') {
+			buffer_insert_utf8(state->current_buffer.buffer,
+					   inp->input.key.utf8);
+
+			if (*inp->input.key.utf8 == UTF8_RETURN ||
+			    *inp->input.key.utf8 == UTF8_NEWLINE) {
+				editor_set_cursor_position(
+					state,
+					state->current_buffer.cursor.row + 1,
+					0);
+			} else if (*inp->input.key.utf8 == UTF8_TAB) {
+				editor_set_cursor_position(
+					state, state->current_buffer.cursor.row,
+					state->current_buffer.cursor.col +
+						state->tab_spaces);
+			} else {
+				editor_set_cursor_position(
+					state, state->current_buffer.cursor.row,
+					state->current_buffer.cursor.col + 1);
+			}
+
+			keystate->inputs[i] =
+				keystate->inputs[keystate->inputs_len - 1];
+			keystate->inputs_len--;
 		} else {
-			editor_set_cursor_position(
-				state, state->current_buffer.cursor.row,
-				state->current_buffer.cursor.col + 1);
+			i++;
 		}
 	}
 }
@@ -167,12 +173,12 @@ editor_do_binds(struct clk_EditorState *state, struct clk_Keystate keystate)
 }
 
 void
-editor_simulate(struct clk_EditorState *state, struct clk_Keystate keystate)
+editor_simulate(struct clk_EditorState *state, struct clk_Keystate *keystate)
 {
 	state->resize_required =
-		window_inputs_contains_input(keystate, INPUT_RESIZEREQ);
+		window_inputs_contains_input(*keystate, INPUT_RESIZEREQ);
 
-	if (window_inputs_contains_input(keystate, INPUT_CLOSEREQ)) {
+	if (window_inputs_contains_input(*keystate, INPUT_CLOSEREQ)) {
 		state->is_running = FALSE;
 		return;
 	}
@@ -183,7 +189,7 @@ editor_simulate(struct clk_EditorState *state, struct clk_Keystate keystate)
 		 clicker_renderer.clk_draw.current_font_height) +
 		1;
 
-	editor_do_binds(state, keystate);
+	editor_do_binds(state, *keystate);
 
 	editor_buffer_text_input(state, keystate);
 
