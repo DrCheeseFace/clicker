@@ -148,7 +148,13 @@ size_t buffer_get_max_row(const BufferID buffer_id);
 // WINDOW
 //
 
-#define WINDOW_BACKGROUND_COLOR 0x00022424;
+#define WINDOW_BACKGROUND_COLOR 0x00022424
+
+#define WINDOW_BACKGROUND_COLOR_R                                              \
+	(((WINDOW_BACKGROUND_COLOR >> 16) & 0xFF) / 255.0)
+#define WINDOW_BACKGROUND_COLOR_G                                              \
+	(((WINDOW_BACKGROUND_COLOR >> 8) & 0xFF) / 255.0)
+#define WINDOW_BACKGROUND_COLOR_B ((WINDOW_BACKGROUND_COLOR & 0xFF) / 255.0)
 
 struct clk_Window {
 	void *window_ctx;
@@ -258,15 +264,7 @@ void window_pol_event(void);
 int window_inputs_contains_input(struct clk_Keystate keystate,
 				 struct clk_Input input);
 
-void window_clear(struct clk_Window window);
-
 void window_flush_display(struct clk_Window window);
-
-void window_draw_fill_rectangle(struct clk_Window window, uint16_t x,
-				uint16_t y, uint16_t w, uint16_t h);
-
-void window_draw_line(struct clk_Window window, uint16_t x1, uint16_t y1,
-		      uint16_t x2, uint16_t y2);
 
 //
 // DRAW
@@ -286,8 +284,10 @@ void draw_init(struct clk_Draw *clicker_draw, struct clk_Window clk_window);
 
 void draw_free(struct clk_Draw clicker_draw);
 
-void draw_update_text_surface_to_window_size(struct clk_Draw clicker_draw,
+void draw_update_text_surface_to_window_size(struct clk_Draw *clicker_draw,
 					     struct clk_Window clk_window);
+
+void draw_blit_present(struct clk_Window clk_window);
 
 void draw_push_attr(struct clk_Draw clicker_draw);
 
@@ -295,8 +295,10 @@ void draw_pop_attr(struct clk_Draw clicker_draw);
 
 void draw_set_font_size(struct clk_Draw clicker_draw, double size);
 
-void draw_set_font_color(struct clk_Draw clicker_draw, double r, double g,
+void draw_set_draw_color(struct clk_Draw clicker_draw, double r, double g,
 			 double b);
+
+void draw_set_line_width(struct clk_Draw clicker_draw, uint16_t width);
 
 void draw_move_cursor_to(struct clk_Draw clicker_draw, double x, double y);
 
@@ -310,12 +312,17 @@ void draw_write_text(struct clk_Draw clicker_draw, const char *text,
 
 void draw_flush(struct clk_Draw clicker_draw);
 
+void draw_line(struct clk_Draw clicker_draw, uint16_t x1, uint16_t y1,
+	       uint16_t x2, uint16_t y2);
+
 void draw_fill_rectangle(struct clk_Draw clicker_draw, uint16_t x, uint16_t y,
 			 uint16_t w, uint16_t h, float r, float g, float b,
 			 cairo_operator_t operator);
 
 void draw_clip_rectangle(struct clk_Draw clicker_draw, double x, double y,
 			 double w, double h);
+
+void draw_color_background(struct clk_Draw clicker_draw);
 
 //
 // RENDER

@@ -178,6 +178,20 @@ editor_simulate(struct clk_EditorState *state, struct clk_Keystate *keystate)
 	state->resize_required =
 		window_inputs_contains_input(*keystate, INPUT_RESIZEREQ);
 
+	// consume resize request
+	if (state->resize_required) {
+		for (int i = 0; i < keystate->inputs_len; i++) {
+			if (keystate->inputs[i].type ==
+			    CLK_INPUT_TYPE_RESIZEREQ) {
+				keystate->inputs[i] =
+					keystate->inputs[keystate->inputs_len -
+							 1];
+				keystate->inputs_len--;
+				break;
+			}
+		}
+	}
+
 	if (window_inputs_contains_input(*keystate, INPUT_CLOSEREQ)) {
 		state->is_running = FALSE;
 		return;

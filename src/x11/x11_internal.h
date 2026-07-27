@@ -15,6 +15,7 @@ struct x11_Window {
 	Atom wm_delete_window;
 	XIM xim;
 	XIC xic;
+	Pixmap back_buffer;
 };
 
 #endif //X11_INTENRAL_H

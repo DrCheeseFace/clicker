@@ -28,7 +28,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 clicker_state.current_buffer.cursor.col);
 
 	draw_set_font_size(renderer.clk_draw, 20.0f);
-	draw_set_font_color(renderer.clk_draw, 1, 1, 1);
+	draw_set_draw_color(renderer.clk_draw, 1, 1, 1);
 	draw_update_font_extents(&renderer.clk_draw);
 
 	draw_move_cursor_to(renderer.clk_draw, 10.0,
@@ -59,15 +59,14 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 
 	draw_write_text(renderer.clk_draw, text_buffer, NULL);
 
+	// draw wire frame
+	draw_set_line_width(renderer.clk_draw, 1);
+	draw_line(renderer.clk_draw, 0, 0, renderer.clk_window.window_w,
+		  renderer.clk_window.window_h);
+	draw_line(renderer.clk_draw, renderer.clk_window.window_w, 0, 0,
+		  renderer.clk_window.window_h);
+
 	draw_pop_attr(renderer.clk_draw);
-
-	// draw wireframe whole window
-	window_draw_line(renderer.clk_window, 0, 0,
-			 renderer.clk_window.window_w,
-			 renderer.clk_window.window_h);
-
-	window_draw_line(renderer.clk_window, renderer.clk_window.window_w, 0,
-			 0, renderer.clk_window.window_h);
 }
 
 // @TODO some static stuff to get blinking working
@@ -110,7 +109,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 				    (state.current_buffer.frame_origin_y * 2));
 
 	draw_set_font_size(renderer->clk_draw, font_size);
-	draw_set_font_color(renderer->clk_draw, 1, 1, 1);
+	draw_set_draw_color(renderer->clk_draw, 1, 1, 1);
 	draw_update_font_extents(&renderer->clk_draw);
 
 	size_t start_row;
@@ -234,6 +233,17 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 	render_text_buffer_cursor(renderer->clk_draw, state);
 }
 
+mrm_internal void
+render_background(struct clk_Renderer *renderer)
+{
+	draw_push_attr(renderer->clk_draw);
+	draw_set_draw_color(renderer->clk_draw, WINDOW_BACKGROUND_COLOR_R,
+			    WINDOW_BACKGROUND_COLOR_G,
+			    WINDOW_BACKGROUND_COLOR_B);
+	draw_color_background(renderer->clk_draw);
+	draw_pop_attr(renderer->clk_draw);
+}
+
 void
 render_init(struct clk_Renderer *renderer, int window_x, int window_y,
 	    int window_w, int window_h, int border_w)
@@ -254,13 +264,14 @@ render_free(struct clk_Renderer *renderer)
 void
 render_frame(struct clk_Renderer *renderer, struct clk_EditorState state)
 {
-	window_clear(renderer->clk_window);
-
 	if (state.resize_required) {
 		window_update_window_size(&renderer->clk_window);
-		draw_update_text_surface_to_window_size(renderer->clk_draw,
+
+		draw_update_text_surface_to_window_size(&renderer->clk_draw,
 							renderer->clk_window);
 	}
+
+	render_background(renderer);
 
 	render_text_buffer(renderer, state);
 
@@ -269,5 +280,8 @@ render_frame(struct clk_Renderer *renderer, struct clk_EditorState state)
 	}
 
 	draw_flush(renderer->clk_draw);
+
+	draw_blit_present(renderer->clk_window);
+
 	window_flush_display(renderer->clk_window);
 }

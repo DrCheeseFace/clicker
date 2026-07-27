@@ -93,15 +93,13 @@ window_init(struct clk_Window *window, int window_x, int window_y, int window_w,
 		       WhitePixel(x11_window->main_display,
 				  DefaultScreen(x11_window->main_display)));
 
-	int AttributeValueMask = CWBackPixel | CWEventMask;
+	int AttributeValueMask = CWEventMask;
 	XSetWindowAttributes WindowAttributes = { 0 };
 
 	WindowAttributes.event_mask = StructureNotifyMask | ExposureMask |
 				      KeyPressMask | KeyReleaseMask |
 				      ButtonPressMask | ButtonReleaseMask |
 				      PointerMotionMask;
-
-	WindowAttributes.background_pixel = WINDOW_BACKGROUND_COLOR;
 
 	x11_window->main_window =
 		XCreateWindow(x11_window->main_display, x11_window->root_window,
@@ -116,6 +114,12 @@ window_init(struct clk_Window *window, int window_x, int window_y, int window_w,
 			&x11_window->wm_delete_window, 1);
 
 	XMapWindow(x11_window->main_display, x11_window->main_window);
+
+	x11_window->back_buffer = XCreatePixmap(
+		x11_window->main_display, x11_window->main_window, window_w,
+		window_h,
+		DefaultDepth(x11_window->main_display,
+			     DefaultScreen(x11_window->main_display)));
 
 	(*window).window_w = window_w;
 	(*window).window_h = window_h;
@@ -135,6 +139,7 @@ window_free(struct clk_Window window)
 {
 	struct x11_Window *const x11_window = window.window_ctx;
 
+	XFreePixmap(x11_window->main_display, x11_window->back_buffer);
 	int err = XDestroyWindow(x11_window->main_display,
 				 x11_window->main_window);
 
@@ -320,36 +325,8 @@ window_update_window_size(struct clk_Window *window)
 }
 
 void
-window_clear(struct clk_Window window)
-{
-	struct x11_Window *const x11_window = window.window_ctx;
-	XClearWindow(x11_window->main_display, x11_window->main_window);
-}
-
-void
 window_flush_display(struct clk_Window window)
 {
 	struct x11_Window *const x11_window = window.window_ctx;
 	XFlush(x11_window->main_display);
-}
-
-// @TODO replace with cairo
-void
-window_draw_fill_rectangle(struct clk_Window window, uint16_t x, uint16_t y,
-			   uint16_t w, uint16_t h)
-{
-	struct x11_Window *const x11_window = window.window_ctx;
-	XFillRectangle(x11_window->main_display, x11_window->main_window,
-		       x11_window->context, x, y, w, h);
-}
-
-// @TODO replace with cairo
-void
-window_draw_line(struct clk_Window window, uint16_t x1, uint16_t y1,
-		 uint16_t x2, uint16_t y2)
-{
-	struct x11_Window *const x11_window = window.window_ctx;
-
-	XDrawLine(x11_window->main_display, x11_window->main_window,
-		  x11_window->context, x1, y1, x2, y2);
 }
