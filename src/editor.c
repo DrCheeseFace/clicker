@@ -31,6 +31,8 @@ editor_buffer_text_input(struct clk_EditorState *state,
 	if (window_inputs_contains_input(*keystate, INPUT_CTRL))
 		return;
 
+	// @TODO make cleaner
+	// consume text buffer events
 	for (int i = 0; i < keystate->inputs_len;) {
 		struct clk_Input *inp = &keystate->inputs[i];
 
