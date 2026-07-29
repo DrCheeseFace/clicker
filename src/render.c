@@ -19,7 +19,9 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 "cursor_col: %zu\n",
 		 clicker_state.last_tick.s, clicker_state.last_tick.ns,
 		 clicker_keystate.inputs_len,
-		 window_inputs_contains_input(clicker_keystate, INPUT_CTRL),
+		 window_inputs_contains_input(
+			 clicker_keystate,
+			 INPUT_KEYBOARD(CLK_KEYSYM_CTRL_LEFT)),
 		 clicker_keystate.mouse_x, clicker_keystate.mouse_y,
 		 (size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
 			  (buffers[0]->gap_end - buffers[0]->gap_start)),

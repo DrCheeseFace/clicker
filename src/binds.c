@@ -233,89 +233,80 @@ editor_decrease_current_buffer_text_size(struct clk_EditorState *state)
 
 const struct clk_BindDefine clicker_binds[CLK_BIND_COUNT] = {
 	{
-		.type = CLK_INPUT_TYPE_KEYBOARD,
 		.inputs_len = 1,
-		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs = { { .tag = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_DEBUG_BIND } } } },
 		.on_event = &editor_debug_dump_buffer_to_file,
 	},
 	{
-		.type = CLK_INPUT_TYPE_KEYBOARD,
 		.inputs_len = 2,
-		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs = { { .tag = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_EQUAL } } },
-			    { .type = CLK_INPUT_TYPE_KEYBOARD,
+			    { .tag = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_CTRL_LEFT } } } },
 		.on_event = &editor_increase_current_buffer_text_size,
 	},
 	{
-		.type = CLK_INPUT_TYPE_KEYBOARD,
 		.inputs_len = 2,
-		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs = { { .tag = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_MINUS } } },
-			    { .type = CLK_INPUT_TYPE_KEYBOARD,
+			    { .tag = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_CTRL_LEFT } } } },
 		.on_event = &editor_decrease_current_buffer_text_size,
 	},
 	{
-		.type = CLK_INPUT_TYPE_KEYBOARD,
 		.inputs_len = 1,
-		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs = { { .tag = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_ARROW_UP } } } },
 		.on_event = &editor_current_buffer_move_cursor_up,
 	},
 	{
-		.type = CLK_INPUT_TYPE_KEYBOARD,
 		.inputs_len = 1,
-		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs = { { .tag = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_ARROW_DOWN } } } },
 		.on_event = &editor_current_buffer_move_cursor_down,
 	},
 	{
-		.type = CLK_INPUT_TYPE_KEYBOARD,
 		.inputs_len = 1,
-		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs = { { .tag = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_ARROW_LEFT } } } },
 		.on_event = &editor_current_buffer_move_cursor_left,
 	},
 	{
-		.type = CLK_INPUT_TYPE_KEYBOARD,
 		.inputs_len = 1,
-		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs = { { .tag = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_ARROW_RIGHT } } } },
 		.on_event = &editor_current_buffer_move_cursor_right,
 	},
 	{
-		.type = CLK_INPUT_TYPE_KEYBOARD,
 		.inputs_len = 1,
-		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
+		.inputs = { { .tag = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_BACKSPACE } } } },
 		.on_event = &editor_buffer_backspace,
 	},
 	{
-		.type = CLK_INPUT_TYPE_MOUSE,
 		.inputs_len = 1,
-		.inputs = { { .type = CLK_INPUT_TYPE_MOUSE,
+		.inputs = { { .tag = CLK_INPUT_TYPE_MOUSE,
 			      .input = { .mouse_button =
 						 CLK_WINDOW_EVENT_MOUSE1 } } },
 		.on_event = &editor_click_within_current_buffer,

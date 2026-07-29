@@ -27,14 +27,15 @@ mrm_internal void
 editor_buffer_text_input(struct clk_EditorState *state,
 			 struct clk_Keystate *keystate)
 {
-	if (window_inputs_contains_input(*keystate, INPUT_CTRL))
+	if (window_inputs_contains_input(*keystate,
+					 INPUT_KEYBOARD(CLK_KEYSYM_CTRL_LEFT)))
 		return;
 
 	// @TODO make cleaner
 	for (int i = 0; i < keystate->inputs_len;) {
 		struct clk_Input *inp = &keystate->inputs[i];
 
-		if (inp->type == CLK_INPUT_TYPE_KEYBOARD &&
+		if (inp->tag == CLK_INPUT_TYPE_KEYBOARD &&
 		    *inp->input.key.utf8 != '\0') {
 			buffer_insert_utf8(state->current_buffer.buffer,
 					   inp->input.key.utf8);
@@ -168,9 +169,10 @@ editor_do_binds(struct clk_EditorState *state, struct clk_Keystate *keystate)
 		if (all_present) {
 			def.on_event(state);
 			for (uint8_t i = 0; i < def.inputs_len; i++) {
-				window_inputs_consume_keyboard_input(
+				window_inputs_consume_input(
 					keystate,
-					def.inputs[i].input.key.keysym);
+					INPUT_KEYBOARD(
+						def.inputs[i].input.key.keysym));
 			}
 		}
 		bind++;
@@ -180,24 +182,15 @@ editor_do_binds(struct clk_EditorState *state, struct clk_Keystate *keystate)
 void
 editor_simulate(struct clk_EditorState *state, struct clk_Keystate *keystate)
 {
-	state->resize_required =
-		window_inputs_contains_input(*keystate, INPUT_RESIZEREQ);
-
-	// consume resize request
-	if (state->resize_required) {
-		for (int i = 0; i < keystate->inputs_len; i++) {
-			if (keystate->inputs[i].type ==
-			    CLK_INPUT_TYPE_RESIZEREQ) {
-				keystate->inputs[i] =
-					keystate->inputs[keystate->inputs_len -
-							 1];
-				keystate->inputs_len--;
-				break;
-			}
-		}
+	if (window_inputs_contains_input(
+		    *keystate, INPUT_WINDOW_REQUEST(CLK_REQUEST_RESIZE))) {
+		state->resize_required = TRUE;
+		window_inputs_consume_input(
+			keystate, INPUT_WINDOW_REQUEST(CLK_REQUEST_RESIZE));
 	}
 
-	if (window_inputs_contains_input(*keystate, INPUT_CLOSEREQ)) {
+	if (window_inputs_contains_input(
+		    *keystate, INPUT_WINDOW_REQUEST(CLK_REQUEST_CLOSE))) {
 		state->is_running = FALSE;
 		return;
 	}
