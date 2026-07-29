@@ -4,7 +4,6 @@
 const XID x11_keycode_to_clk_keysym_map[CLK_KEYSYM_COUNT] = {
 	XK_Up,	      XK_Down,	  XK_Left,	XK_Right,  XK_equal, XK_minus,
 	XK_BackSpace, XK_Shift_L, XK_Control_L, XK_Escape, XK_bar
-
 };
 
 mrm_internal enum clk_Keysym
@@ -39,38 +38,6 @@ window_inputs_add_input(struct clk_Keystate *keystate, struct clk_Input input)
 	keystate->inputs[keystate->inputs_len] = input;
 
 	keystate->inputs_len++;
-}
-
-mrm_internal void
-window_inputs_remove_keyboard_input(struct clk_Keystate *keystate,
-				    enum clk_Keysym keysym)
-{
-	for (struct clk_Input *i = &keystate->inputs[0];
-	     i < &keystate->inputs[keystate->inputs_len]; i++) {
-		if (i->type == CLK_INPUT_TYPE_KEYBOARD &&
-		    i->input.key.keysym == keysym) {
-			*i = keystate->inputs[keystate->inputs_len - 1];
-			keystate->inputs_len -= 1;
-
-			return;
-		}
-	}
-}
-
-mrm_internal void
-window_inputs_remove_mouse_input(struct clk_Keystate *keystate,
-				 enum clk_EventMouseButton button)
-{
-	for (struct clk_Input *i = &keystate->inputs[0];
-	     i < &keystate->inputs[keystate->inputs_len]; i++) {
-		if (i->type == CLK_INPUT_TYPE_MOUSE &&
-		    i->input.mouse_button == button) {
-			*i = keystate->inputs[keystate->inputs_len - 1];
-			keystate->inputs_len -= 1;
-
-			return;
-		}
-	}
 }
 
 // @TODO err handling
@@ -214,7 +181,7 @@ window_pol_event(void)
 					x11_window, GeneralEvent);
 
 			if (keysym != CLK_KEYSYM_NOT_FOUND) {
-				window_inputs_remove_keyboard_input(
+				window_inputs_consume_keyboard_input(
 					&clicker_keystate, keysym);
 			}
 			break;
@@ -231,7 +198,7 @@ window_pol_event(void)
 		}
 
 		case ButtonRelease: {
-			window_inputs_remove_mouse_input(
+			window_inputs_consume_mouse_input(
 				&clicker_keystate, GeneralEvent.xbutton.button);
 			break;
 		}
@@ -288,6 +255,7 @@ window_inputs_contains_input(struct clk_Keystate keystate,
 		case CLK_INPUT_TYPE_KEYBOARD:
 			if (i->input.key.keysym != input.input.key.keysym)
 				break;
+
 			if (i->input.key.keysym == CLK_KEYSYM_NOT_FOUND) {
 				if (strcmp(i->input.key.utf8,
 					   input.input.key.utf8) == 0)
@@ -296,13 +264,17 @@ window_inputs_contains_input(struct clk_Keystate keystate,
 				return TRUE;
 			}
 			break;
+
 		case CLK_INPUT_TYPE_MOUSE:
 			if (i->input.mouse_button == input.input.mouse_button)
 				return TRUE;
 			break;
+
 		case CLK_INPUT_TYPE_CLOSEREQ:
+
 		case CLK_INPUT_TYPE_RESIZEREQ:
 			return TRUE;
+
 		default:
 			break;
 		}
@@ -310,6 +282,39 @@ window_inputs_contains_input(struct clk_Keystate keystate,
 
 	return FALSE;
 }
+
+void
+window_inputs_consume_keyboard_input(struct clk_Keystate *keystate,
+				    enum clk_Keysym keysym)
+{
+	for (struct clk_Input *i = &keystate->inputs[0];
+	     i < &keystate->inputs[keystate->inputs_len]; i++) {
+		if (i->type == CLK_INPUT_TYPE_KEYBOARD &&
+		    i->input.key.keysym == keysym) {
+			*i = keystate->inputs[keystate->inputs_len - 1];
+			keystate->inputs_len -= 1;
+
+			return;
+		}
+	}
+}
+
+void
+window_inputs_consume_mouse_input(struct clk_Keystate *keystate,
+				 enum clk_EventMouseButton button)
+{
+	for (struct clk_Input *i = &keystate->inputs[0];
+	     i < &keystate->inputs[keystate->inputs_len]; i++) {
+		if (i->type == CLK_INPUT_TYPE_MOUSE &&
+		    i->input.mouse_button == button) {
+			*i = keystate->inputs[keystate->inputs_len - 1];
+			keystate->inputs_len -= 1;
+
+			return;
+		}
+	}
+}
+
 
 void
 window_update_window_size(struct clk_Window *window)

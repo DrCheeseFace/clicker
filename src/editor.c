@@ -15,7 +15,6 @@ editor_blink_cursor(struct clk_EditorState *state)
 	struct clk_Time delta;
 	time_get_delta(last_is_visible_toggle, state->last_tick, &delta);
 
-	// @TODO use time_greater_than_or_equal_to()
 	if (time_greater_than_or_equal_to(delta,
 					  toggle_cursor_visibility_delay)) {
 		last_is_visible_toggle = state->last_tick;
@@ -32,12 +31,10 @@ editor_buffer_text_input(struct clk_EditorState *state,
 		return;
 
 	// @TODO make cleaner
-	// consume text buffer events
 	for (int i = 0; i < keystate->inputs_len;) {
 		struct clk_Input *inp = &keystate->inputs[i];
 
 		if (inp->type == CLK_INPUT_TYPE_KEYBOARD &&
-		    inp->input.key.keysym == CLK_KEYSYM_NOT_FOUND &&
 		    *inp->input.key.utf8 != '\0') {
 			buffer_insert_utf8(state->current_buffer.buffer,
 					   inp->input.key.utf8);
@@ -59,6 +56,7 @@ editor_buffer_text_input(struct clk_EditorState *state,
 					state->current_buffer.cursor.col + 1);
 			}
 
+			// consume text buffer event
 			keystate->inputs[i] =
 				keystate->inputs[keystate->inputs_len - 1];
 			keystate->inputs_len--;
@@ -146,7 +144,7 @@ editor_free(struct clk_EditorState *state)
 }
 
 void
-editor_do_binds(struct clk_EditorState *state, struct clk_Keystate keystate)
+editor_do_binds(struct clk_EditorState *state, struct clk_Keystate *keystate)
 {
 	enum clk_Bind bind = CLK_BIND_DEBUG;
 
@@ -159,7 +157,7 @@ editor_do_binds(struct clk_EditorState *state, struct clk_Keystate keystate)
 		Bool all_present = TRUE;
 
 		for (uint8_t i = 0; i < def.inputs_len; i++) {
-			if (!window_inputs_contains_input(keystate,
+			if (!window_inputs_contains_input(*keystate,
 							  def.inputs[i])) {
 				all_present = FALSE;
 				break;
@@ -168,8 +166,12 @@ editor_do_binds(struct clk_EditorState *state, struct clk_Keystate keystate)
 
 		if (all_present) {
 			def.on_event(state);
+			for (uint8_t i = 0; i < def.inputs_len; i++) {
+				window_inputs_consume_keyboard_input(
+					keystate,
+					def.inputs[i].input.key.keysym);
+			}
 		}
-
 		bind++;
 	}
 }
@@ -205,7 +207,7 @@ editor_simulate(struct clk_EditorState *state, struct clk_Keystate *keystate)
 		 clicker_renderer.clk_draw.current_font_height) +
 		1;
 
-	editor_do_binds(state, *keystate);
+	editor_do_binds(state, keystate);
 
 	editor_buffer_text_input(state, keystate);
 

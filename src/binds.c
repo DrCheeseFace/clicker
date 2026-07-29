@@ -243,20 +243,28 @@ const struct clk_BindDefine clicker_binds[CLK_BIND_COUNT] = {
 	},
 	{
 		.type = CLK_INPUT_TYPE_KEYBOARD,
-		.inputs_len = 1,
+		.inputs_len = 2,
 		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
-							  CLK_KEYSYM_EQUAL } } } },
+							  CLK_KEYSYM_EQUAL } } },
+			    { .type = CLK_INPUT_TYPE_KEYBOARD,
+			      .input = { .key = { .utf8 = "",
+						  .keysym =
+							  CLK_KEYSYM_CTRL_LEFT } } } },
 		.on_event = &editor_increase_current_buffer_text_size,
 	},
 	{
 		.type = CLK_INPUT_TYPE_KEYBOARD,
-		.inputs_len = 1,
+		.inputs_len = 2,
 		.inputs = { { .type = CLK_INPUT_TYPE_KEYBOARD,
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
-							  CLK_KEYSYM_MINUS } } } },
+							  CLK_KEYSYM_MINUS } } },
+			    { .type = CLK_INPUT_TYPE_KEYBOARD,
+			      .input = { .key = { .utf8 = "",
+						  .keysym =
+							  CLK_KEYSYM_CTRL_LEFT } } } },
 		.on_event = &editor_decrease_current_buffer_text_size,
 	},
 	{
