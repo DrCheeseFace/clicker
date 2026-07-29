@@ -285,7 +285,7 @@ window_inputs_contains_input(struct clk_Keystate keystate,
 
 void
 window_inputs_consume_keyboard_input(struct clk_Keystate *keystate,
-				    enum clk_Keysym keysym)
+				     enum clk_Keysym keysym)
 {
 	for (struct clk_Input *i = &keystate->inputs[0];
 	     i < &keystate->inputs[keystate->inputs_len]; i++) {
@@ -301,7 +301,7 @@ window_inputs_consume_keyboard_input(struct clk_Keystate *keystate,
 
 void
 window_inputs_consume_mouse_input(struct clk_Keystate *keystate,
-				 enum clk_EventMouseButton button)
+				  enum clk_EventMouseButton button)
 {
 	for (struct clk_Input *i = &keystate->inputs[0];
 	     i < &keystate->inputs[keystate->inputs_len]; i++) {
@@ -314,7 +314,6 @@ window_inputs_consume_mouse_input(struct clk_Keystate *keystate,
 		}
 	}
 }
-
 
 void
 window_update_window_size(struct clk_Window *window)

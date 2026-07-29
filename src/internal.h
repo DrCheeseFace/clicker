@@ -263,11 +263,12 @@ void window_pol_event(void);
 
 int window_inputs_contains_input(struct clk_Keystate keystate,
 				 struct clk_Input input);
+
 void window_inputs_consume_keyboard_input(struct clk_Keystate *keystate,
-					 enum clk_Keysym);
-void
-window_inputs_consume_mouse_input(struct clk_Keystate *keystate,
-				  enum clk_EventMouseButton );
+					  enum clk_Keysym keysym);
+
+void window_inputs_consume_mouse_input(struct clk_Keystate *keystate,
+				       enum clk_EventMouseButton button);
 
 void window_flush_display(struct clk_Window window);
 

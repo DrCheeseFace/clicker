@@ -143,6 +143,7 @@ editor_free(struct clk_EditorState *state)
 	buffers_destroy_active_buffers();
 }
 
+// @TODO dont consume ctrl or any hold down stuff?
 void
 editor_do_binds(struct clk_EditorState *state, struct clk_Keystate *keystate)
 {
