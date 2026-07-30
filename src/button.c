@@ -3,7 +3,7 @@
 struct {
 	uint8_t length;
 	struct clk_Button buttons[16];
-} registered_buttons;
+} registered_buttons = { 0 };
 
 mrm_internal struct clk_Button *
 button_registered_buttons_append(struct clk_Button button)
@@ -33,18 +33,6 @@ button_get_registered_button(const char *id_str, int *idx)
 	}
 
 	return NULL;
-}
-
-void
-button_init(void)
-{
-	memset(&registered_buttons, 0, sizeof(registered_buttons));
-}
-
-void
-button_destroy(void)
-{
-	memset(&registered_buttons, 0, sizeof(registered_buttons));
 }
 
 Err

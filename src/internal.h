@@ -459,9 +459,6 @@ struct clk_Button {
 	void *args;
 };
 
-void button_init(void);
-void button_destroy(void);
-
 // adds button to active buttons to check for every frame
 // warning expects strlen(id_str) < max_button_id_str_len
 Err button_register_button(const char *id_str, struct clk_Rect box,
