@@ -30,7 +30,8 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 window_inputs_contains_input(
 			 clicker_keystate,
 			 INPUT_KEYBOARD(CLK_KEYSYM_CTRL_LEFT)),
-		 clicker_keystate.mouse_x, clicker_keystate.mouse_y,
+		 clicker_keystate.mouse_position.x,
+		 clicker_keystate.mouse_position.y,
 		 (size_t)(BUFFER_MAX_TEXT_BYTES_LENGTH(buffers[0]->size) -
 			  (buffers[0]->gap_end - buffers[0]->gap_start)),
 		 clicker_state.current_buffer.font_size,

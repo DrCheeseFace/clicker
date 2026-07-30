@@ -50,6 +50,7 @@ SRC_LIB	       = src/main.c \
 	 src/render.c \
 	 src/editor.c \
 	 src/binds.c \
+	 src/button.c \
 	 src/posix/time.c \
 	 src/x11/draw.c
 
@@ -60,6 +61,7 @@ SRC_TEST_MAIN  = test/test.c \
 	 src/render.c \
 	 src/editor.c \
 	 src/binds.c \
+	 src/button.c \
 	 src/posix/time.c \
 	 src/x11/draw.c
 

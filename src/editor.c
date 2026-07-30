@@ -203,6 +203,9 @@ editor_simulate(struct clk_EditorState *state, struct clk_Keystate *keystate)
 
 	editor_do_binds(state, keystate);
 
+	// @TODO put behind mouse click action
+	button_handle_click(state, keystate->mouse_position);
+
 	editor_buffer_text_input(state, keystate);
 
 	editor_blink_cursor(state);

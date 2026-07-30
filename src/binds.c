@@ -157,8 +157,8 @@ editor_buffer_backspace(struct clk_EditorState *state)
 mrm_internal void
 editor_click_within_current_buffer(struct clk_EditorState *state)
 {
-	const uint16_t mouse_x_pos = clicker_keystate.mouse_x;
-	const uint16_t mouse_y_pos = clicker_keystate.mouse_y;
+	const uint16_t mouse_x_pos = clicker_keystate.mouse_position.x;
+	const uint16_t mouse_y_pos = clicker_keystate.mouse_position.y;
 
 	// check bounds of text frame
 	if (mouse_x_pos < state->current_buffer.frame_origin_x)

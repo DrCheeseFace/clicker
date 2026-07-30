@@ -229,8 +229,10 @@ struct clk_Input {
 struct clk_Keystate {
 	uint8_t inputs_len;
 
-	uint16_t mouse_x;
-	uint16_t mouse_y;
+	struct clk_MousePosition {
+		uint16_t x;
+		uint16_t y;
+	} mouse_position;
 
 	struct clk_Input inputs[MAX_INPUTS];
 };
@@ -434,5 +436,48 @@ void editor_fatal(struct clk_EditorState *state, const char *err_msg,
 void editor_frame_start(struct clk_EditorState *state);
 
 void editor_frame_end(struct clk_EditorState *state);
+
+//
+// BUTTON
+//
+
+struct clk_Button {
+#define max_button_id_str_len 32
+	char id_str[max_button_id_str_len];
+
+	struct clk_Rect {
+		uint16_t x, y, w, h;
+	} box;
+
+	// registerd func to run if button is clicked
+	void (*on_click)(struct clk_EditorState *state, void *args);
+
+	// registered func to check if button should be destroyed
+	Bool (*destroy_when)(struct clk_EditorState *state);
+
+	// passed args to on_click func
+	void *args;
+};
+
+void button_init(void);
+void button_destroy(void);
+
+// adds button to active buttons to check for every frame
+// warning expects strlen(id_str) < max_button_id_str_len
+Err button_register_button(const char *id_str, struct clk_Rect box,
+			   void (*on_click)(struct clk_EditorState *state,
+					    void *args),
+			   Bool (*destroy_when)(struct clk_EditorState *state),
+			   void *args);
+
+// checks and removes registered buttons if needs to be destroy
+void button_registered_buttons_purge_dead(struct clk_EditorState *state);
+
+// checks all active buttons, and runs the most recently created button
+Bool button_handle_click(struct clk_EditorState *state,
+			 struct clk_MousePosition mouse_position);
+
+Bool is_pointer_within_bounds(struct clk_MousePosition pointer,
+			      struct clk_Rect bounds);
 
 #endif

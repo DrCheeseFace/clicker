@@ -207,8 +207,10 @@ window_pol_event(void)
 						      MotionNotify,
 						      &GeneralEvent)) {
 			}
-			clicker_keystate.mouse_x = motion_event.xmotion.x;
-			clicker_keystate.mouse_y = motion_event.xmotion.y;
+			clicker_keystate.mouse_position.x =
+				motion_event.xmotion.x;
+			clicker_keystate.mouse_position.y =
+				motion_event.xmotion.y;
 			break;
 		}
 

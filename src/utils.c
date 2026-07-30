@@ -120,3 +120,26 @@ get_row_length(BufferID bufferid, size_t row, uint8_t tab_spaces)
 
 	return col_count;
 }
+
+Bool
+is_pointer_within_bounds(struct clk_MousePosition pointer,
+			 struct clk_Rect bounds)
+{
+	if (pointer.x < bounds.x) {
+		return FALSE;
+	}
+
+	if (pointer.y < bounds.y) {
+		return FALSE;
+	}
+
+	if (pointer.x > bounds.x + bounds.w) {
+		return FALSE;
+	}
+
+	if (pointer.y > bounds.y + bounds.h) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
