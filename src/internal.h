@@ -49,6 +49,10 @@ void utf8_seek_next(char **ptr);
 // TIME
 //
 
+#define NS_PER_SEC 1000000000ULL
+#define NS_PER_MSEC 1000000ULL
+#define NS_PER_USEC 1000ULL
+
 struct clk_Time {
 	uint64_t s;
 	uint64_t ns;
@@ -227,8 +231,6 @@ struct clk_Keystate {
 
 	uint16_t mouse_x;
 	uint16_t mouse_y;
-
-	struct clk_Time current_pol_time;
 
 	struct clk_Input inputs[MAX_INPUTS];
 };

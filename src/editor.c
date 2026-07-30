@@ -221,14 +221,14 @@ editor_frame_end(struct clk_EditorState *state)
 	time_get_time(&current_time);
 
 	uint64_t elapsed_ns =
-		(current_time.s - state->last_tick.s) * 1000000000ULL +
+		(current_time.s - state->last_tick.s) * NS_PER_SEC +
 		current_time.ns - state->last_tick.ns;
 
-	uint64_t target_ns = (uint64_t)state->target_frame_ms * 1000000ULL;
+	uint64_t target_ns = (uint64_t)state->target_frame_ms * NS_PER_MSEC;
 
 	if (elapsed_ns < target_ns) {
 		uint64_t remaining_ns = target_ns - elapsed_ns;
-		time_sleep_us((uint32_t)(remaining_ns / 1000ULL));
+		time_sleep_us((uint32_t)(remaining_ns / NS_PER_USEC));
 	}
 }
 

@@ -7,7 +7,15 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 
 	char debug_event_snack_text[2048];
 
+	struct clk_Time delta = { 0 };
+	local_persist struct clk_Time previous_time = (struct clk_Time){ 0 };
+
+	time_get_delta(previous_time, clicker_state.last_tick, &delta);
+	delta.ns += NS_PER_SEC * delta.s;
+	float fps = NS_PER_SEC / delta.ns;
+
 	snprintf(debug_event_snack_text, sizeof(debug_event_snack_text),
+		 "fps: %f\n"
 		 "time: %lu:%lu\n"
 		 "inputs_len: %d\n"
 		 "ctrl_down: %d\n"
@@ -17,7 +25,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		 "text_size: %f\n"
 		 "cursor_row: %zu\n"
 		 "cursor_col: %zu\n",
-		 clicker_state.last_tick.s, clicker_state.last_tick.ns,
+		 fps, clicker_state.last_tick.s, clicker_state.last_tick.ns,
 		 clicker_keystate.inputs_len,
 		 window_inputs_contains_input(
 			 clicker_keystate,
@@ -69,6 +77,8 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 		  renderer.clk_window.window_h);
 
 	draw_pop_attr(renderer.clk_draw);
+
+	previous_time = clicker_state.last_tick;
 }
 
 // @TODO some static stuff to get blinking working

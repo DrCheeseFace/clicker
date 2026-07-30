@@ -129,8 +129,6 @@ window_pol_event(void)
 		XEvent GeneralEvent = { 0 };
 		XNextEvent(x11_window->main_display, &GeneralEvent);
 
-		time_get_time(&clicker_keystate.current_pol_time);
-
 		if (XFilterEvent(&GeneralEvent, x11_window->main_window))
 			continue;
 
@@ -158,7 +156,7 @@ window_pol_event(void)
 			}
 
 			input.input.key.utf8[count] = '\0';
-			input.time = clicker_keystate.current_pol_time;
+			input.time = clicker_state.last_tick;
 
 			window_inputs_add_input(&clicker_keystate, input);
 			break;
