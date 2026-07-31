@@ -1,13 +1,13 @@
 #include "internal.h"
 
 // @TODO remove me
-mrm_internal const struct clk_Time toggle_cursor_visibility_delay = {
+internal_function const struct clk_Time toggle_cursor_visibility_delay = {
 	.s = 0,
 	.ns = 700000000ULL
 };
 
 // @TODO hacky impl
-mrm_internal void
+internal_function void
 editor_blink_cursor(struct clk_EditorState *state)
 {
 	local_persist struct clk_Time last_is_visible_toggle = { 0 };
@@ -23,7 +23,7 @@ editor_blink_cursor(struct clk_EditorState *state)
 	}
 }
 
-mrm_internal void
+internal_function void
 editor_buffer_text_input(struct clk_EditorState *state,
 			 struct clk_Keystate *keystate)
 {
@@ -141,7 +141,7 @@ editor_free(struct clk_EditorState *state)
 		free(state->err_str);
 	}
 
-	buffers_destroy_active_buffers();
+	buffers_free();
 }
 
 // @TODO dont consume ctrl or any hold down stuff?

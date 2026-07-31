@@ -1,14 +1,6 @@
 #include "internal.h"
 
-void
-editor_debug_dump_buffer_to_file(struct clk_EditorState *state)
-{
-	debug_save_buffer_to_file(buffers[state->current_buffer.buffer],
-				  "./buffer_dump.txt");
-	return;
-}
-
-mrm_internal void
+internal_function void
 editor_current_buffer_move_cursor_up(struct clk_EditorState *state)
 {
 	if (state->current_buffer.cursor.row > 0) {
@@ -35,7 +27,7 @@ editor_current_buffer_move_cursor_up(struct clk_EditorState *state)
 	return;
 }
 
-mrm_internal void
+internal_function void
 editor_current_buffer_move_cursor_down(struct clk_EditorState *state)
 {
 	size_t max_row = buffer_get_max_row(state->current_buffer.buffer);
@@ -63,7 +55,7 @@ editor_current_buffer_move_cursor_down(struct clk_EditorState *state)
 	return;
 }
 
-mrm_internal void
+internal_function void
 editor_current_buffer_move_cursor_left(struct clk_EditorState *state)
 {
 	Buffer *const buffer = buffers[state->current_buffer.buffer];
@@ -89,7 +81,7 @@ editor_current_buffer_move_cursor_left(struct clk_EditorState *state)
 	return;
 }
 
-mrm_internal void
+internal_function void
 editor_current_buffer_move_cursor_right(struct clk_EditorState *state)
 {
 	Buffer *const buffer = buffers[state->current_buffer.buffer];
@@ -120,7 +112,7 @@ editor_current_buffer_move_cursor_right(struct clk_EditorState *state)
 	return;
 }
 
-mrm_internal void
+internal_function void
 editor_buffer_backspace(struct clk_EditorState *state)
 {
 	Buffer *const buffer = buffers[state->current_buffer.buffer];
@@ -154,7 +146,7 @@ editor_buffer_backspace(struct clk_EditorState *state)
 	}
 }
 
-mrm_internal void
+internal_function void
 editor_click_within_current_buffer(struct clk_EditorState *state)
 {
 	const uint16_t mouse_x_pos = clicker_keystate.mouse_position.x;
@@ -217,14 +209,14 @@ editor_click_within_current_buffer(struct clk_EditorState *state)
 				   state->tab_spaces);
 }
 
-mrm_internal void
+internal_function void
 editor_increase_current_buffer_text_size(struct clk_EditorState *state)
 {
 	state->current_buffer.font_size *= 1.2;
 	return;
 }
 
-mrm_internal void
+internal_function void
 editor_decrease_current_buffer_text_size(struct clk_EditorState *state)
 {
 	state->current_buffer.font_size /= 1.2;
@@ -238,7 +230,7 @@ const struct clk_BindDefine clicker_binds[CLK_BIND_COUNT] = {
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_DEBUG_BIND } } } },
-		.on_event = &editor_debug_dump_buffer_to_file,
+		.on_event = &debug_dump_buffer_to_file,
 	},
 	{
 		.inputs_len = 2,
@@ -310,5 +302,5 @@ const struct clk_BindDefine clicker_binds[CLK_BIND_COUNT] = {
 			      .input = { .mouse_button =
 						 CLK_WINDOW_EVENT_MOUSE1 } } },
 		.on_event = &editor_click_within_current_buffer,
-	}
+	},
 };

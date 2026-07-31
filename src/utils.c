@@ -85,15 +85,38 @@ utf8_seek_next(char **ptr)
 	}
 }
 
-void
+internal_function void
 debug_save_buffer_to_file(Buffer *buffer, const char *filepath)
 {
-	FILE *dump_to = fopen(filepath, "w+");
+	FILE *dump_to = fopen(filepath, "w");
 
 	fwrite(buffer->text, BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size),
 	       sizeof(char), dump_to);
 
 	fclose(dump_to);
+}
+
+internal_function void
+debug_save_buffer_contents_to_file(BufferID buffer_id, const char *filepath)
+{
+	FILE *dump_to = fopen(filepath, "w");
+
+	Err err = buffer_save_to_file(buffer_id, dump_to);
+
+	fclose(dump_to);
+
+	ASSERT(err == OK);
+}
+
+void
+debug_dump_buffer_to_file(struct clk_EditorState *state)
+{
+	debug_save_buffer_to_file(buffers[state->current_buffer.buffer],
+				  "./buffer_dump.txt");
+
+	debug_save_buffer_contents_to_file(state->current_buffer.buffer,
+					   "./buffer_dump_contents.txt");
+	return;
 }
 
 size_t

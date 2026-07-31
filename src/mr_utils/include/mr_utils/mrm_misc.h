@@ -8,7 +8,7 @@
 /*
  * more descriptive use of the keyword `static`
  */
-#define mrm_internal static
+#define internal_function static
 #define global_variable static
 #define local_persist static
 

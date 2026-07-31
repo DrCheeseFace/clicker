@@ -37,8 +37,6 @@ enum OptionFlags {
 void log_help(void);
 void log_version(void);
 Err process_arg(char *arg);
-Bool utf8_is_continuation_byte(char byte);
-void utf8_seek_next(char **ptr);
 
 // @TODO make this hex?
 #define UTF8_RETURN '\n'
@@ -75,6 +73,7 @@ Bool time_greater_than_or_equal_to(struct clk_Time t1, struct clk_Time t2);
 #define MAX_BUFFERS UINT8_MAX
 typedef uint8_t BufferID;
 
+//@TODO remove typedef?
 typedef struct {
 	FILE *write_to;
 
@@ -85,9 +84,6 @@ typedef struct {
 
 	char text[];
 } Buffer;
-
-void debug_save_buffer_to_file(Buffer *buffer, const char *filepath);
-size_t get_row_length(BufferID bufferid, size_t row, uint8_t tab_spaces);
 
 // -1 for the null terminator :(
 #define BUFFER_MAX_TEXT_BYTES_LENGTH(size) ((size) - sizeof(Buffer) - 1)
@@ -101,13 +97,16 @@ extern size_t system_page_size;
 // NOT_FOUND if free buffer space found
 Err buffers_init(void);
 
-void buffers_destroy_active_buffers(void);
+void buffers_free(void);
 
 Err buffer_create_blank(size_t size, BufferID *const new_buffer_id);
 
 Err buffer_create_from_file(FILE *const file, BufferID *const new_buffer_id);
 
 void buffer_destroy(BufferID buffer_id);
+
+// has no regard for what is in the file, just writes to it
+Err buffer_save_to_file(BufferID buffer_id, FILE *const file);
 
 // move buffer gap_start to position of char
 void buffer_move_gap_to_utf8_idx(const BufferID buffer_id,
@@ -177,8 +176,8 @@ enum clk_Keysym {
 	CLK_KEYSYM_BACKSPACE,
 	CLK_KEYSYM_SHIFT_LEFT,
 	CLK_KEYSYM_CTRL_LEFT,
-	CLK_KEYSYM_DEBUG_BIND,
 	CLK_KEYSYM_ESCAPE,
+	CLK_KEYSYM_DEBUG_BIND,
 	CLK_KEYSYM_COUNT,
 	CLK_KEYSYM_NOT_FOUND,
 
@@ -476,5 +475,14 @@ Bool button_handle_click(struct clk_EditorState *state,
 
 Bool is_pointer_within_bounds(struct clk_MousePosition pointer,
 			      struct clk_Rect bounds);
+
+//
+// UTILS
+//
+
+Bool utf8_is_continuation_byte(char byte);
+void utf8_seek_next(char **ptr);
+void debug_dump_buffer_to_file(struct clk_EditorState *state);
+size_t get_row_length(BufferID bufferid, size_t row, uint8_t tab_spaces);
 
 #endif

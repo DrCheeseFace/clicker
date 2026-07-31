@@ -2,11 +2,12 @@
 #include "x11_internal.h"
 
 const XID x11_keycode_to_clk_keysym_map[CLK_KEYSYM_COUNT] = {
-	XK_Up,	      XK_Down,	  XK_Left,	XK_Right,  XK_equal, XK_minus,
-	XK_BackSpace, XK_Shift_L, XK_Control_L, XK_Escape, XK_bar
+	XK_Up,	      XK_Down,	 XK_Left,      XK_Right,
+	XK_equal,     XK_minus,	 XK_BackSpace, XK_Shift_L,
+	XK_Control_L, XK_Escape, XK_semicolon
 };
 
-mrm_internal enum clk_Keysym
+internal_function enum clk_Keysym
 window_translate_x11_keycode_to_clk_keysym(struct x11_Window *x11_window,
 					   XEvent event)
 {
@@ -27,7 +28,7 @@ window_translate_x11_keycode_to_clk_keysym(struct x11_Window *x11_window,
 	return CLK_KEYSYM_NOT_FOUND;
 }
 
-mrm_internal void
+internal_function void
 window_inputs_add_input(struct clk_Keystate *keystate, struct clk_Input input)
 {
 	if (keystate->inputs_len >= MAX_INPUTS) {

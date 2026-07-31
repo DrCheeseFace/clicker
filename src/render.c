@@ -1,6 +1,6 @@
 #include "./internal.h"
 
-mrm_internal void
+internal_function void
 render_debug_draw_snack(struct clk_Renderer renderer)
 {
 	draw_push_attr(renderer.clk_draw);
@@ -83,7 +83,7 @@ render_debug_draw_snack(struct clk_Renderer renderer)
 }
 
 // @TODO some static stuff to get blinking working
-mrm_internal void
+internal_function void
 render_text_buffer_cursor(struct clk_Draw clk_draw,
 			  struct clk_EditorState state)
 {
@@ -107,7 +107,7 @@ render_text_buffer_cursor(struct clk_Draw clk_draw,
 			    CAIRO_OPERATOR_DIFFERENCE);
 }
 
-mrm_internal void
+internal_function void
 render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 {
 	const float font_size = state.current_buffer.font_size;
@@ -246,7 +246,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 	render_text_buffer_cursor(renderer->clk_draw, state);
 }
 
-mrm_internal void
+internal_function void
 render_background(struct clk_Renderer *renderer)
 {
 	draw_push_attr(renderer->clk_draw);

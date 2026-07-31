@@ -1,11 +1,11 @@
 #include "internal.h"
 
-struct {
+global_variable struct {
 	uint8_t length;
 	struct clk_Button buttons[16];
 } registered_buttons = { 0 };
 
-mrm_internal struct clk_Button *
+internal_function struct clk_Button *
 button_registered_buttons_append(struct clk_Button button)
 {
 	registered_buttons.buttons[registered_buttons.length] = button;
@@ -16,7 +16,7 @@ button_registered_buttons_append(struct clk_Button button)
 	return &registered_buttons.buttons[registered_buttons.length - 1];
 }
 
-mrm_internal struct clk_Button *
+internal_function struct clk_Button *
 button_get_registered_button(const char *id_str, int *idx)
 {
 	struct clk_Button *button;

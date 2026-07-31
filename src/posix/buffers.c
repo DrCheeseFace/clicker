@@ -4,7 +4,7 @@
 Buffer *buffers[MAX_BUFFERS] = { NULL };
 size_t system_page_size;
 
-mrm_internal int
+internal_function int
 next_empty_buffer(void)
 {
 	for (uint8_t i = 0; i < MAX_BUFFERS; i++) {
@@ -29,7 +29,7 @@ buffers_init(void)
 }
 
 void
-buffers_destroy_active_buffers(void)
+buffers_free(void)
 {
 	for (BufferID i = 0; i < MAX_BUFFERS; i++) {
 		if (buffers[i]) {
@@ -38,6 +38,7 @@ buffers_destroy_active_buffers(void)
 	}
 }
 
+// @TODO test me
 Err
 buffer_create_from_file(FILE *const file, BufferID *const new_buffer_id)
 {
@@ -126,6 +127,46 @@ buffer_destroy(const BufferID buffer_id)
 {
 	munmap(buffers[buffer_id], buffers[buffer_id]->size);
 	buffers[buffer_id] = NULL;
+}
+
+Err
+buffer_save_to_file(BufferID buffer_id, FILE *const file)
+{
+	Buffer *const buffer = buffers[buffer_id];
+
+	fseek(file, 0L, SEEK_SET);
+
+	const size_t buffer_max_text_bytes =
+		BUFFER_MAX_TEXT_BYTES_LENGTH(buffer->size);
+
+	// case 1: |--------xxxxxxxxxx-------|
+
+	// case 2: |xxxxxxxxx----------------|
+
+	// case 3: |----------------xxxxxxxxx|
+
+	// write text before the gap case 1 and 3
+	size_t written = 0;
+
+	if (buffer->gap_start > 0) {
+		written = fwrite(buffer->text, sizeof(unsigned char),
+				 buffer->gap_start, file);
+		if (written != buffer->gap_start) {
+			return ERR;
+		}
+	}
+
+	// write text after the gap case 1 and 2
+	if (buffer->gap_end < buffer_max_text_bytes) {
+		written = fwrite(buffer->text + buffer->gap_end,
+				 sizeof(unsigned char),
+				 buffer_max_text_bytes - buffer->gap_end, file);
+		if (written != buffer_max_text_bytes - buffer->gap_end) {
+			return ERR;
+		}
+	}
+
+	return OK;
 }
 
 void
