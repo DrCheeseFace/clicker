@@ -230,7 +230,7 @@ const struct clk_BindDefine clicker_binds[CLK_BIND_COUNT] = {
 			      .input = { .key = { .utf8 = "",
 						  .keysym =
 							  CLK_KEYSYM_DEBUG_BIND } } } },
-		.on_event = &debug_dump_buffer_to_file,
+		.on_event = &debug_bind,
 	},
 	{
 		.inputs_len = 2,

@@ -109,7 +109,7 @@ debug_save_buffer_contents_to_file(BufferID buffer_id, const char *filepath)
 }
 
 void
-debug_dump_buffer_to_file(struct clk_EditorState *state)
+debug_bind(struct clk_EditorState *state)
 {
 	debug_save_buffer_to_file(buffers[state->current_buffer.buffer],
 				  "./buffer_dump.txt");

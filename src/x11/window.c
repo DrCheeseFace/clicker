@@ -2,9 +2,8 @@
 #include "x11_internal.h"
 
 const XID x11_keycode_to_clk_keysym_map[CLK_KEYSYM_COUNT] = {
-	XK_Up,	      XK_Down,	 XK_Left,      XK_Right,
-	XK_equal,     XK_minus,	 XK_BackSpace, XK_Shift_L,
-	XK_Control_L, XK_Escape, XK_semicolon
+	XK_Up,	      XK_Down,	  XK_Left,	XK_Right,  XK_equal, XK_minus,
+	XK_BackSpace, XK_Shift_L, XK_Control_L, XK_Escape, XK_bar
 };
 
 internal_function enum clk_Keysym

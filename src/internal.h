@@ -482,7 +482,7 @@ Bool is_pointer_within_bounds(struct clk_MousePosition pointer,
 
 Bool utf8_is_continuation_byte(char byte);
 void utf8_seek_next(char **ptr);
-void debug_dump_buffer_to_file(struct clk_EditorState *state);
+void debug_bind(struct clk_EditorState *state);
 size_t get_row_length(BufferID bufferid, size_t row, uint8_t tab_spaces);
 
 #endif
