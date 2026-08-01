@@ -58,7 +58,7 @@ editor_current_buffer_move_cursor_down(struct clk_EditorState *state)
 internal_function void
 editor_current_buffer_move_cursor_left(struct clk_EditorState *state)
 {
-	Buffer *const buffer = buffers[state->current_buffer.buffer];
+	struct Buffer *const buffer = buffers[state->current_buffer.buffer];
 	if (state->current_buffer.cursor.col > 0) {
 		if (buffer->gap_start > 0 &&
 		    *(buffer->text + buffer->gap_start - 1) == UTF8_TAB) {
@@ -84,7 +84,7 @@ editor_current_buffer_move_cursor_left(struct clk_EditorState *state)
 internal_function void
 editor_current_buffer_move_cursor_right(struct clk_EditorState *state)
 {
-	Buffer *const buffer = buffers[state->current_buffer.buffer];
+	struct Buffer *const buffer = buffers[state->current_buffer.buffer];
 	size_t row_length = get_row_length(state->current_buffer.buffer,
 					   state->current_buffer.cursor.row,
 					   state->tab_spaces);
@@ -115,7 +115,7 @@ editor_current_buffer_move_cursor_right(struct clk_EditorState *state)
 internal_function void
 editor_buffer_backspace(struct clk_EditorState *state)
 {
-	Buffer *const buffer = buffers[state->current_buffer.buffer];
+	struct Buffer *const buffer = buffers[state->current_buffer.buffer];
 
 	if (buffer->gap_start == 0) {
 		return;
@@ -185,7 +185,7 @@ editor_click_within_current_buffer(struct clk_EditorState *state)
 
 	char *ptr = buffer_get_ptr_of_line(state->current_buffer.buffer, row);
 
-	Buffer *const buffer = buffers[state->current_buffer.buffer];
+	struct Buffer *const buffer = buffers[state->current_buffer.buffer];
 
 	size_t col_count = 0;
 	while (ptr <

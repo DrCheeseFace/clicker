@@ -38,7 +38,6 @@ void log_help(void);
 void log_version(void);
 Err process_arg(char *arg);
 
-// @TODO make this hex?
 #define UTF8_RETURN '\n'
 #define UTF8_NEWLINE '\r'
 #define UTF8_TAB '\t'
@@ -74,7 +73,7 @@ Bool time_greater_than_or_equal_to(struct clk_Time t1, struct clk_Time t2);
 typedef uint8_t BufferID;
 
 //@TODO remove typedef?
-typedef struct {
+struct Buffer {
 	FILE *write_to;
 
 	size_t size;
@@ -83,12 +82,12 @@ typedef struct {
 	size_t gap_end;
 
 	char text[];
-} Buffer;
+};
 
 // -1 for the null terminator :(
-#define BUFFER_MAX_TEXT_BYTES_LENGTH(size) ((size) - sizeof(Buffer) - 1)
+#define BUFFER_MAX_TEXT_BYTES_LENGTH(size) ((size) - sizeof(struct Buffer) - 1)
 
-extern Buffer *buffers[MAX_BUFFERS];
+extern struct Buffer *buffers[MAX_BUFFERS];
 extern size_t system_page_size;
 
 // size rounded up to multiple of pagesize
@@ -141,7 +140,7 @@ void *buffer_get_ptr_of_line(BufferID buffer_id, size_t row);
 void buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row,
 				size_t col, size_t tab_spaces);
 
-void buffer_seek_next_utf8(Buffer *const buffer, char **p);
+void buffer_seek_next_utf8(struct Buffer *const buffer, char **p);
 
 size_t buffer_get_max_row(const BufferID buffer_id);
 

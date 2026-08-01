@@ -1,12 +1,10 @@
 #include "internal.h"
 
-// @TODO remove me
 internal_function const struct clk_Time toggle_cursor_visibility_delay = {
 	.s = 0,
 	.ns = 700000000ULL
 };
 
-// @TODO hacky impl
 internal_function void
 editor_blink_cursor(struct clk_EditorState *state)
 {

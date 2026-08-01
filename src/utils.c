@@ -86,7 +86,7 @@ utf8_seek_next(char **ptr)
 }
 
 internal_function void
-debug_save_buffer_to_file(Buffer *buffer, const char *filepath)
+debug_save_buffer_to_file(struct Buffer *buffer, const char *filepath)
 {
 	FILE *dump_to = fopen(filepath, "w");
 
@@ -122,7 +122,7 @@ debug_bind(struct clk_EditorState *state)
 size_t
 get_row_length(BufferID bufferid, size_t row, uint8_t tab_spaces)
 {
-	Buffer *const buffer = buffers[bufferid];
+	struct Buffer *const buffer = buffers[bufferid];
 
 	char *ptr = buffer_get_ptr_of_line(bufferid, row);
 

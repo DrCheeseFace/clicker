@@ -150,7 +150,7 @@ render_text_buffer(struct clk_Renderer *renderer, struct clk_EditorState state)
 		start_row + state.current_buffer.view_row_count);
 
 	char *ptr = start_p;
-	Buffer *const buffer = buffers[state.current_buffer.buffer];
+	struct Buffer *const buffer = buffers[state.current_buffer.buffer];
 
 	while (ptr < end_p) {
 		// jump the gap, pull out into different loop so this doesnt have to be checked everytime?

@@ -1,7 +1,7 @@
 #include "../internal.h"
 #include "./posix_internal.h"
 
-Buffer *buffers[MAX_BUFFERS] = { NULL };
+struct Buffer *buffers[MAX_BUFFERS] = { NULL };
 size_t system_page_size;
 
 internal_function int
@@ -55,8 +55,9 @@ buffer_create_from_file(FILE *const file, BufferID *const new_buffer_id)
 
 	size = (size + system_page_size - 1) & ~(system_page_size - 1);
 
-	Buffer *const new_buffer = mmap(NULL, size, PROT_READ | PROT_WRITE,
-					MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	struct Buffer *const new_buffer =
+		mmap(NULL, size, PROT_READ | PROT_WRITE,
+		     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (new_buffer == MAP_FAILED) {
 		return ERR;
 	}
@@ -99,8 +100,9 @@ buffer_create_blank(size_t size, BufferID *const new_buffer_id)
 
 	size = (size + system_page_size - 1) & ~(system_page_size - 1);
 
-	Buffer *const new_buffer = mmap(NULL, size, PROT_READ | PROT_WRITE,
-					MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	struct Buffer *const new_buffer =
+		mmap(NULL, size, PROT_READ | PROT_WRITE,
+		     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (new_buffer == MAP_FAILED) {
 		return ERR;
 	}
@@ -132,7 +134,7 @@ buffer_destroy(const BufferID buffer_id)
 Err
 buffer_save_to_file(BufferID buffer_id, FILE *const file)
 {
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 
 	fseek(file, 0L, SEEK_SET);
 
@@ -181,7 +183,7 @@ void
 buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row, size_t col,
 			   size_t tab_spaces)
 {
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 
 	char *p = buffer->text;
 	if (buffer->gap_start == 0) {
@@ -222,7 +224,7 @@ buffer_move_gap_to_row_col(const BufferID buffer_id, size_t row, size_t col,
 void
 buffer_move_gap(const BufferID buffer_id, size_t gap_start)
 {
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 
 	const size_t gap_size = buffer->gap_end - buffer->gap_start;
 
@@ -260,7 +262,7 @@ size_t
 buffer_get_logical_byte_idx_of_utf8_idx(const BufferID buffer_id,
 					size_t char_idx)
 {
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 
 	size_t logical_byte_idx = 0;
 	size_t current_char_idx = 0;
@@ -305,7 +307,7 @@ buffer_get_logical_byte_idx_of_utf8_idx(const BufferID buffer_id,
 size_t
 buffer_get_byte_idx_of_utf8_idx(const BufferID buffer_id, size_t char_idx)
 {
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 
 	size_t current_char_idx = 0;
 
@@ -351,7 +353,7 @@ buffer_insert_ascii_char(const BufferID buffer_id, const char c)
 		buffer_expand_gap_by_page(buffer_id);
 	}
 
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 	*(buffer->text + buffer->gap_start) = c;
 	buffer->gap_start++;
 }
@@ -359,7 +361,7 @@ buffer_insert_ascii_char(const BufferID buffer_id, const char c)
 void
 buffer_insert_utf8(const BufferID buffer_id, const char *c)
 {
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 
 	size_t length = strlen(c);
 	if (buffer->gap_start + length >= buffer->gap_end) {
@@ -375,7 +377,7 @@ buffer_insert_utf8(const BufferID buffer_id, const char *c)
 void
 buffer_delete_ascii_char(const BufferID buffer_id)
 {
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 
 	if (buffer->gap_start != 0) {
 		buffer->gap_start--;
@@ -385,7 +387,7 @@ buffer_delete_ascii_char(const BufferID buffer_id)
 void
 buffer_delete_utf8_char(BufferID buffer_id)
 {
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 
 	if (buffer->gap_start != 0) {
 		buffer->gap_start--;
@@ -400,11 +402,11 @@ buffer_delete_utf8_char(BufferID buffer_id)
 void
 buffer_expand_gap_by_page(const BufferID buffer_id)
 {
-	Buffer *const old_buffer = buffers[buffer_id];
+	struct Buffer *const old_buffer = buffers[buffer_id];
 
 	const size_t new_buffer_size = old_buffer->size + system_page_size;
 
-	Buffer *const new_buffer =
+	struct Buffer *const new_buffer =
 		mmap(NULL, new_buffer_size, PROT_READ | PROT_WRITE,
 		     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (new_buffer == MAP_FAILED) {
@@ -435,9 +437,7 @@ buffer_expand_gap_by_page(const BufferID buffer_id)
 void *
 buffer_get_ptr_of_line(BufferID buffer_id, size_t row)
 {
-	// @TODO.
-	// handle utf-8 possibly some part of utf-8 similar to newline
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 
 	// find first char that isnt a in buffer gap
 	char *p = buffer->text;
@@ -461,7 +461,7 @@ buffer_get_ptr_of_line(BufferID buffer_id, size_t row)
 }
 
 void
-buffer_seek_next_utf8(Buffer *const buffer, char **p)
+buffer_seek_next_utf8(struct Buffer *const buffer, char **p)
 {
 	utf8_seek_next(p);
 
@@ -474,7 +474,7 @@ buffer_seek_next_utf8(Buffer *const buffer, char **p)
 size_t
 buffer_get_max_row(const BufferID buffer_id)
 {
-	Buffer *const buffer = buffers[buffer_id];
+	struct Buffer *const buffer = buffers[buffer_id];
 	size_t max_row = 0;
 
 	char *p = buffer->text;
